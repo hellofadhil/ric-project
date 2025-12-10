@@ -7,13 +7,12 @@
 <div class="min-h-screen bg-slate-50">
     <div class="max-w-6xl mx-auto px-2 sm:px-6  py-4">
 
+        <form asp-controller="Ric"
+              asp-action="Create"
+              method="post"
+              enctype="multipart/form-data">
 
-<form asp-controller="Ric"
-      asp-action="Create"
-      method="post"
-      enctype="multipart/form-data">
-
-                @* @Html.AntiForgeryToken() *@
+            @* @Html.AntiForgeryToken() *@
 
             <div class="bg-white rounded-2xl shadow-sm ring-1 ring-slate-200/80 overflow-hidden">
                 <!-- Section: Informasi Umum -->
@@ -74,9 +73,10 @@
                         </p>
                     </div>
 
-               @Html.EditorFor(m => m.AsIsRasciFile, "FileInput", new {
-        Label = "As-is Process & RASCI"
-    })
+                    @* AS-IS: multiple files *@
+                    @Html.EditorFor(m => m.AsIsRasciFiles, "MultipleFileInput", new {
+                        Label = "As-is Process & RASCI"
+                    })
                 </div>
 
                 <!-- Section: Permasalahan & Alternatif Solusi -->
@@ -165,9 +165,10 @@
                 </div>
 
                 <div class="p-8 space-y-8">
-    @Html.EditorFor(m => m.ToBeProcessFile, "FileInput", new {
-        Label = "To be Process Business + RASCI + KKI"
-    })
+                    @* TO-BE: multiple files *@
+                    @Html.EditorFor(m => m.ToBeProcessFiles, "MultipleFileInput", new {
+                        Label = "To be Process Business + RASCI + KKI"
+                    })
 
                     @Html.EditorFor(m => m.PotentialValue, "TextAreaInput", new {
                         Label = "Potensi Value Creation/Value Solution/Value Addition/Cost Reduction/Sustainability",
@@ -175,10 +176,10 @@
                         Placeholder = "Jelaskan estimasi benefit: efisiensi waktu, pengurangan error, pengurangan biaya, peningkatan kontrol, dsb..."
                     })
 
-
-    @Html.EditorFor(m => m.ExpectedCompletionFile, "FileInput", new {
-        Label = "Expected Completion Target & Expected Target Revisi STK"
-    })
+                    @* EXPECTED COMPLETION: multiple files *@
+                    @Html.EditorFor(m => m.ExpectedCompletionFiles, "MultipleFileInput", new {
+                        Label = "Expected Completion Target & Expected Target Revisi STK"
+                    })
 
                     @Html.EditorFor(m => m.HasilSetelahPerbaikan, "TextAreaInput", new {
                         Label = "Hasil Setelah Perbaikan (Ekspektasi)",
@@ -210,150 +211,151 @@
                 </div>
             </div>
         </form>
-        @* } *@
 
-        @* @section Scripts {
-        } *@
-
-        
         @section Scripts {
-    <script>
-        // ===== HASHTAG =====
-        (function () {
-            const badgesContainer = document.getElementById('hashtag-badges');
-            const input = document.getElementById('hashtag-input');
+            <script>
+                // ===== HASHTAG =====
+                (function () {
+                    const badgesContainer = document.getElementById('hashtag-badges');
+                    const input = document.getElementById('hashtag-input');
 
-            function createTagBadge(tag) {
-                tag = tag.trim();
-                if (!tag) return;
+                    function createTagBadge(tag) {
+                        tag = tag.trim();
+                        if (!tag) return;
 
-                const exists = badgesContainer.querySelector('input[type="hidden"][value="' + tag + '"]');
-                if (exists) return;
+                        const exists = badgesContainer.querySelector('input[type="hidden"][value="' + tag + '"]');
+                        if (exists) return;
 
-                const index = badgesContainer.querySelectorAll('input[type="hidden"]').length;
+                        const index = badgesContainer.querySelectorAll('input[type="hidden"]').length;
 
-                const placeholder = badgesContainer.querySelector('.empty-hashtag-placeholder');
-                if (placeholder) placeholder.remove();
+                        const placeholder = badgesContainer.querySelector('.empty-hashtag-placeholder');
+                        if (placeholder) placeholder.remove();
 
-                const span = document.createElement('span');
-                span.className = 'tag-badge inline-flex items-center gap-1 rounded-full bg-indigo-50 px-2.5 py-1 text-xs font-medium text-indigo-700 border border-indigo-100';
+                        const span = document.createElement('span');
+                        span.className = 'tag-badge inline-flex items-center gap-1 rounded-full bg-indigo-50 px-2.5 py-1 text-xs font-medium text-indigo-700 border border-indigo-100';
 
-                span.innerHTML =
-                    '<span>#' + tag + '</span>' +
-                    '<button type="button" class="tag-remove inline-flex h-4 w-4 items-center justify-center rounded-full bg-indigo-100 text-[10px] text-indigo-600" data-tag="' + tag + '">×</button>' +
-                    '<input type="hidden" name="Hashtags[' + index + ']" value="' + tag + '" />';
+                        span.innerHTML =
+                            '<span>#' + tag + '</span>' +
+                            '<button type="button" class="tag-remove inline-flex h-4 w-4 items-center justify-center rounded-full bg-indigo-100 text-[10px] text-indigo-600" data-tag="' + tag + '">×</button>' +
+                            '<input type="hidden" name="Hashtags[' + index + ']" value="' + tag + '" />';
 
-                badgesContainer.appendChild(span);
-            }
-
-            if (input) {
-                input.addEventListener('keydown', function (e) {
-                    if (e.key === 'Enter') {
-                        e.preventDefault();
-                        const value = input.value.replace(/^#+/, '');
-                        if (value.trim()) {
-                            createTagBadge(value);
-                            input.value = '';
-                        }
+                        badgesContainer.appendChild(span);
                     }
-                });
-            }
 
-            if (badgesContainer) {
-                badgesContainer.addEventListener('click', function (e) {
-                    if (e.target.classList.contains('tag-remove')) {
-                        const badge = e.target.closest('.tag-badge');
-                        if (badge) badge.remove();
-
-                        const hiddenInputs = badgesContainer.querySelectorAll('input[type="hidden"]');
-                        hiddenInputs.forEach((inp, idx) => {
-                            inp.name = 'Hashtags[' + idx + ']';
+                    if (input) {
+                        input.addEventListener('keydown', function (e) {
+                            if (e.key === 'Enter') {
+                                e.preventDefault();
+                                const value = input.value.replace(/^#+/, '');
+                                if (value.trim()) {
+                                    createTagBadge(value);
+                                    input.value = '';
+                                }
+                            }
                         });
-
-                        if (hiddenInputs.length === 0) {
-                            const span = document.createElement('span');
-                            span.className = 'text-xs text-slate-400 empty-hashtag-placeholder';
-                            span.textContent = 'Belum ada hashtag. Tambahin buat ngelompokkin RIC lo.';
-                            badgesContainer.appendChild(span);
-                        }
                     }
-                });
-            }
-        })();
 
-        // ===== ALTERNATIF SOLUSI =====
-        (function () {
-            const badgesContainer = document.getElementById('alternatif-badges');
-            const input = document.getElementById('alternatif-input');
+                    if (badgesContainer) {
+                        badgesContainer.addEventListener('click', function (e) {
+                            if (e.target.classList.contains('tag-remove')) {
+                                const badge = e.target.closest('.tag-badge');
+                                if (badge) badge.remove();
 
-            function createAltBadge(text) {
-                text = text.trim();
-                if (!text) return;
+                                const hiddenInputs = badgesContainer.querySelectorAll('input[type="hidden"]');
+                                hiddenInputs.forEach((inp, idx) => {
+                                    inp.name = 'Hashtags[' + idx + ']';
+                                });
 
-                const index = badgesContainer.querySelectorAll('input[type="hidden"]').length;
-
-                const placeholder = badgesContainer.querySelector('.empty-alt-placeholder');
-                if (placeholder) placeholder.remove();
-
-                const span = document.createElement('span');
-                span.className = 'alt-badge inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700 border border-emerald-100';
-
-                span.innerHTML =
-                    '<span>' + text + '</span>' +
-                    '<button type="button" class="alt-remove inline-flex h-4 w-4 items-center justify-center rounded-full bg-emerald-100 text-[10px] text-emerald-600" data-alt="' + text + '">×</button>' +
-                    '<input type="hidden" name="Alternatifs[' + index + ']" value="' + text + '" />';
-
-                badgesContainer.appendChild(span);
-            }
-
-            if (input) {
-                input.addEventListener('keydown', function (e) {
-                    if (e.key === 'Enter') {
-                        e.preventDefault();
-                        const lines = input.value.split('\n');
-                        lines.forEach(line => createAltBadge(line));
-                        input.value = '';
-                    }
-                });
-            }
-
-            if (badgesContainer) {
-                badgesContainer.addEventListener('click', function (e) {
-                    if (e.target.classList.contains('alt-remove')) {
-                        const badge = e.target.closest('span.alt-badge');
-                        if (badge) badge.remove();
-
-                        const hiddenInputs = badgesContainer.querySelectorAll('input[type="hidden"]');
-                        hiddenInputs.forEach((inp, idx) => {
-                            inp.name = 'Alternatifs[' + idx + ']';
+                                if (hiddenInputs.length === 0) {
+                                    const span = document.createElement('span');
+                                    span.className = 'text-xs text-slate-400 empty-hashtag-placeholder';
+                                    span.textContent = 'Belum ada hashtag. Tambahin buat ngelompokkin RIC lo.';
+                                    badgesContainer.appendChild(span);
+                                }
+                            }
                         });
+                    }
+                })();
 
-                        if (hiddenInputs.length === 0) {
-                            const span = document.createElement('span');
-                            span.className = 'text-xs text-slate-400 empty-alt-placeholder';
-                            span.textContent = 'Belum ada alternatif. Tambah minimal satu opsi solusi.';
-                            badgesContainer.appendChild(span);
-                        }
+                // ===== ALTERNATIF SOLUSI =====
+                (function () {
+                    const badgesContainer = document.getElementById('alternatif-badges');
+                    const input = document.getElementById('alternatif-input');
+
+                    function createAltBadge(text) {
+                        text = text.trim();
+                        if (!text) return;
+
+                        const index = badgesContainer.querySelectorAll('input[type="hidden"]').length;
+
+                        const placeholder = badgesContainer.querySelector('.empty-alt-placeholder');
+                        if (placeholder) placeholder.remove();
+
+                        const span = document.createElement('span');
+                        span.className = 'alt-badge inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700 border border-emerald-100';
+
+                        span.innerHTML =
+                            '<span>' + text + '</span>' +
+                            '<button type="button" class="alt-remove inline-flex h-4 w-4 items-center justify-center rounded-full bg-emerald-100 text-[10px] text-emerald-600" data-alt="' + text + '">×</button>' +
+                            '<input type="hidden" name="Alternatifs[' + index + ']" value="' + text + '" />';
+
+                        badgesContainer.appendChild(span);
+                    }
+
+                    if (input) {
+                        input.addEventListener('keydown', function (e) {
+                            if (e.key === 'Enter') {
+                                e.preventDefault();
+                                const lines = input.value.split('\n');
+                                lines.forEach(line => createAltBadge(line));
+                                input.value = '';
+                            }
+                        });
+                    }
+
+                    if (badgesContainer) {
+                        badgesContainer.addEventListener('click', function (e) {
+                            if (e.target.classList.contains('alt-remove')) {
+                                const badge = e.target.closest('span.alt-badge');
+                                if (badge) badge.remove();
+
+                                const hiddenInputs = badgesContainer.querySelectorAll('input[type="hidden"]');
+                                hiddenInputs.forEach((inp, idx) => {
+                                    inp.name = 'Alternatifs[' + idx + ']';
+                                });
+
+                                if (hiddenInputs.length === 0) {
+                                    const span = document.createElement('span');
+                                    span.className = 'text-xs text-slate-400 empty-alt-placeholder';
+                                    span.textContent = 'Belum ada alternatif. Tambah minimal satu opsi solusi.';
+                                    badgesContainer.appendChild(span);
+                                }
+                            }
+                        });
+                    }
+                })();
+
+                // ===== FILE INPUT LABEL (multiple aware) =====
+                document.addEventListener("change", function (e) {
+                    if (!(e.target instanceof HTMLInputElement)) return;
+                    if (e.target.type !== "file") return;
+
+                    const files = e.target.files;
+                    if (!files || files.length === 0) return;
+
+                    const label = e.target.closest("label");
+                    if (!label) return;
+
+                    const nameEl = label.querySelector(".file-name");
+                    if (!nameEl) return;
+
+                    if (files.length === 1) {
+                        nameEl.textContent = files[0].name;
+                    } else {
+                        nameEl.textContent = files.length + " file dipilih";
                     }
                 });
-            }
-        })();
-
-        document.addEventListener("change", function (e) {
-    if (e.target.type === "file") {
-        const file = e.target.files[0];
-        if (!file) return;
-
-        const label = e.target.closest("label");
-        if (!label) return;
-
-        const nameEl = label.querySelector(".file-name");
-        if (nameEl) {
-            nameEl.textContent = file.name;
+            </script>
         }
-    }
-});
-    </script>
-}
     </div>
 </div>

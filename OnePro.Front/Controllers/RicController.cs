@@ -1,30 +1,35 @@
-using System.IO;
-using System.Linq;
 using Core.Models.Enums;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Logging;
+using Microsoft.AspNetCore.Hosting;
 using OnePro.Front.Middleware;
 using OnePro.Front.Models;
 using OnePro.Front.Services.Interfaces;
+using OnePro.Front.Helpers;
+using OnePro.Front.Mappers;
 
 namespace OnePro.Front.Controllers
 {
     [AuthRequired]
-    // [RoleRequired(1, 4)]
     public class RicController : Controller
     {
         private readonly IRicService _ricService;
         private readonly ILogger<RicController> _logger;
         private readonly IHttpContextAccessor _httpContextAccessor;
+        private readonly IWebHostEnvironment _env;
 
         public RicController(
             IRicService ricService,
             ILogger<RicController> logger,
-            IHttpContextAccessor httpContextAccessor
+            IHttpContextAccessor httpContextAccessor,
+            IWebHostEnvironment env
         )
         {
             _ricService = ricService;
             _logger = logger;
             _httpContextAccessor = httpContextAccessor;
+            _env = env;
         }
 
         #region User Views
@@ -61,7 +66,12 @@ namespace OnePro.Front.Controllers
 
             try
             {
-                var dto = await MapToCreateRequestAsync(model, action);
+                var dto = await RicMapper.MapToCreateRequestAsync(
+                    model,
+                    action,
+                    files => FileStorageHelper.SaveRicFilesAsync(files, _env.WebRootPath, _logger)
+                );
+
                 await _ricService.CreateRicAsync(dto, token);
 
                 TempData["SuccessMessage"] = "RIC berhasil dibuat!";
@@ -71,7 +81,7 @@ namespace OnePro.Front.Controllers
             {
                 _logger.LogError(ex, "Error creating RIC");
                 ModelState.AddModelError("", "Terjadi kesalahan saat membuat RIC.");
-                return View(model);
+                return View("~/Views/Ric/User/Create.cshtml", model);
             }
         }
 
@@ -92,12 +102,7 @@ namespace OnePro.Front.Controllers
                 return RedirectToAction(nameof(UserIndex));
             }
 
-            _logger.LogInformation("RIC hasil after: {Val}", ric.HasilSetelahPerbaikan);
-
-
-            var vm = MapToEditViewModel(ric);
-
-            // Ini penting: buang ModelState lama biar nilai dari VM kepake di view
+            var vm = RicMapper.MapToEditViewModel(ric);
             ModelState.Clear();
 
             return View("~/Views/Ric/User/Edit.cshtml", vm);
@@ -123,7 +128,14 @@ namespace OnePro.Front.Controllers
 
             try
             {
-                var dto = await MapToUpdateRequestAsync(id, model, action, existing);
+                var dto = await RicMapper.MapToUpdateRequestAsync(
+                    id,
+                    model,
+                    action,
+                    existing,
+                    files => FileStorageHelper.SaveRicFilesAsync(files, _env.WebRootPath, _logger)
+                );
+
                 await _ricService.UpdateRicAsync(id, dto, token);
 
                 TempData["SuccessMessage"] = "RIC berhasil diperbarui!";
@@ -144,148 +156,6 @@ namespace OnePro.Front.Controllers
         private string? GetAuthToken()
         {
             return HttpContext.Session.GetString("JwtToken");
-        }
-
-        private async Task<FormRicCreateRequest> MapToCreateRequestAsync(
-            RicCreateViewModel model,
-            string action
-        )
-        {
-            var asIsUrl = await SaveFileAndReturnUrlAsync(model.AsIsRasciFile);
-            var toBeUrl = await SaveFileAndReturnUrlAsync(model.ToBeProcessFile);
-            var expectedUrl = await SaveFileAndReturnUrlAsync(model.ExpectedCompletionFile);
-
-            var status = action == "submit" ? StatusRic.Submitted_To_BR : StatusRic.Draft;
-
-            return new FormRicCreateRequest
-            {
-                Judul = model.JudulPermintaan,
-                Hastag = model.Hashtags,
-                AsIsProcessRasciFile = CreateFileList(asIsUrl),
-                Permasalahan = model.Permasalahan,
-                DampakMasalah = model.DampakMasalah,
-                FaktorPenyebabMasalah = model.FaktorPenyebab,
-                SolusiSaatIni = model.SolusiSaatIni,
-                AlternatifSolusi = model.Alternatifs,
-                ToBeProcessBusinessRasciKkiFile = CreateFileList(toBeUrl),
-                PotensiValueCreation = model.PotentialValue,
-                ExcpectedCompletionTargetFile = CreateFileList(expectedUrl),
-                HasilSetelahPerbaikan = model.HasilSetelahPerbaikan,
-                Status = (int)status,
-            };
-        }
-
-        private RicCreateViewModel MapToEditViewModel(RicDetailResponse ric)
-        {
-            return new RicCreateViewModel
-            {
-                Id = ric.Id,
-                JudulPermintaan = ric.Judul,
-                Hashtags = ric.Hastag ?? new List<string>(),
-                Permasalahan = ric.Permasalahan ?? string.Empty,
-                DampakMasalah = ric.DampakMasalah ?? string.Empty,
-                FaktorPenyebab = ric.FaktorPenyebabMasalah ?? string.Empty,
-                SolusiSaatIni = ric.SolusiSaatIni ?? string.Empty,
-                Alternatifs = ric.AlternatifSolusi ?? new List<string>(),
-                PotentialValue = ric.PotensiValueCreation,
-
-                // Ini yang ngisi textbox Hasil Setelah Perbaikan
-                HasilSetelahPerbaikan = ric.HasilSetelahPerbaikan ?? string.Empty,
-
-                ExistingAsIsFileUrls = ric.AsIsProcessRasciFile,
-                ExistingToBeFileUrls = ric.ToBeProcessBusinessRasciKkiFile,
-                ExistingExpectedCompletionFileUrls = ric.ExcpectedCompletionTargetFile,
-            };
-        }
-
-        private async Task<FormRicUpdateRequest> MapToUpdateRequestAsync(
-            Guid id,
-            RicCreateViewModel model,
-            string action,
-            RicDetailResponse existing
-        )
-        {
-            var asIsUrl = await SaveFileAndReturnUrlAsync(model.AsIsRasciFile);
-            var toBeUrl = await SaveFileAndReturnUrlAsync(model.ToBeProcessFile);
-            var expectedUrl = await SaveFileAndReturnUrlAsync(model.ExpectedCompletionFile);
-
-            var status = action == "submit" ? StatusRic.Submitted_To_BR : StatusRic.Draft;
-
-            return new FormRicUpdateRequest
-            {
-                Id = id,
-                Judul = model.JudulPermintaan,
-                Hastag = model.Hashtags,
-                AsIsProcessRasciFile =
-                    asIsUrl != null ? CreateFileList(asIsUrl) : existing.AsIsProcessRasciFile,
-                Permasalahan = model.Permasalahan,
-                DampakMasalah = model.DampakMasalah,
-                FaktorPenyebabMasalah = model.FaktorPenyebab,
-                SolusiSaatIni = model.SolusiSaatIni,
-                AlternatifSolusi = model.Alternatifs,
-                ToBeProcessBusinessRasciKkiFile =
-                    toBeUrl != null
-                        ? CreateFileList(toBeUrl)
-                        : existing.ToBeProcessBusinessRasciKkiFile,
-                PotensiValueCreation = model.PotentialValue,
-                ExcpectedCompletionTargetFile =
-                    expectedUrl != null
-                        ? CreateFileList(expectedUrl)
-                        : existing.ExcpectedCompletionTargetFile,
-                HasilSetelahPerbaikan = model.HasilSetelahPerbaikan,
-                Status = (int)status,
-            };
-        }
-
-        private List<string>? CreateFileList(string? url)
-        {
-            return url != null ? new List<string> { url } : null;
-        }
-
-        private async Task<string?> SaveFileAndReturnUrlAsync(IFormFile? file)
-        {
-            if (file == null || file.Length == 0)
-                return null;
-
-            var uploadFolder = Path.Combine(
-                Directory.GetCurrentDirectory(),
-                "wwwroot",
-                "uploads",
-                "ric"
-            );
-            Directory.CreateDirectory(uploadFolder);
-
-            var fileName = GenerateUniqueFileName(file.FileName);
-            var filePath = Path.Combine(uploadFolder, fileName);
-
-            await using (var stream = new FileStream(filePath, FileMode.Create))
-            {
-                await file.CopyToAsync(stream);
-            }
-
-            _logger.LogInformation("File saved: {FileName}", fileName);
-            return $"/uploads/ric/{fileName}";
-        }
-
-        private string GenerateUniqueFileName(string originalFileName)
-        {
-            var timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
-            var uniqueId = Guid.NewGuid().ToString("N")[..8];
-            var extension = Path.GetExtension(originalFileName);
-            return $"{timestamp}_{uniqueId}{extension}";
-        }
-
-        private void LogModelStateErrors()
-        {
-            var errors = ModelState
-                .Where(x => x.Value?.Errors.Count > 0)
-                .Select(x => new
-                {
-                    Key = x.Key,
-                    Errors = x.Value!.Errors.Select(e => e.ErrorMessage).ToList(),
-                });
-
-            _logger.LogWarning("ModelState validation failed: {@Errors}", errors);
         }
 
         #endregion

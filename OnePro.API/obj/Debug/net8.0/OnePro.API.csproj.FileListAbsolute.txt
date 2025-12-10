@@ -430,3 +430,4 @@ C:\Users\gaske\Videos\PertaminaV2\OnePro.API\obj\Debug\net8.0\scopedcss\bundle\O
 C:\Users\gaske\Videos\PertaminaV2\OnePro.API\obj\Debug\net8.0\OnePro.API.csproj.Up2Date
 C:\Users\gaske\Videos\PertaminaV2\OnePro.API\obj\Debug\net8.0\OnePro.API.genruntimeconfig.cache
 C:\Users\gaske\Videos\PertaminaV2\OnePro.API\obj\Debug\net8.0\ref\OnePro.API.dll
+C:\Users\gaske\Videos\PertaminaV2\OnePro.API\obj\Debug\net8.0\OnePro.API.sourcelink.json

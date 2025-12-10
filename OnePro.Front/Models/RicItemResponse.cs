@@ -15,31 +15,24 @@ namespace OnePro.Front.Models
 
     public class RicCreateViewModel
     {
-        // Penting: tambahkan Id buat edit
-        public Guid Id { get; set; }
+        public Guid? Id { get; set; }
 
-        public string JudulPermintaan { get; set; } = default!;
+        // Basic fields
+        public string JudulPermintaan { get; set; } = string.Empty;
         public List<string> Hashtags { get; set; } = new();
-
         public string Permasalahan { get; set; } = string.Empty;
         public string DampakMasalah { get; set; } = string.Empty;
         public string FaktorPenyebab { get; set; } = string.Empty;
         public string SolusiSaatIni { get; set; } = string.Empty;
-
         public List<string> Alternatifs { get; set; } = new();
-
-        public IFormFile? AsIsRasciFile { get; set; }
-        public IFormFile? ToBeProcessFile { get; set; }
-        public IFormFile? ExpectedCompletionFile { get; set; }
-
-        public string? AsIsRasciFileContent { get; set; }
-        public string? ToBeProcessFileContent { get; set; }
-        public string? ExpectedCompletionFileContent { get; set; }
-
         public string? PotentialValue { get; set; }
-        public string? HasilSetelahPerbaikan { get; set; }
+        public string HasilSetelahPerbaikan { get; set; } = string.Empty;
 
-        // Buat nampung URL file lama (buat Edit)
+        public List<IFormFile>? AsIsRasciFiles { get; set; }
+        public List<IFormFile>? ToBeProcessFiles { get; set; }
+        public List<IFormFile>? ExpectedCompletionFiles { get; set; }
+
+        // Existing URLs (for edit mode)
         public List<string>? ExistingAsIsFileUrls { get; set; }
         public List<string>? ExistingToBeFileUrls { get; set; }
         public List<string>? ExistingExpectedCompletionFileUrls { get; set; }

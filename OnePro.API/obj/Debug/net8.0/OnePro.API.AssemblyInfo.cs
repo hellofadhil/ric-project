@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("OnePro.API")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+20ce4d5f5b385cb5babd43ccfe016bf3cdeb5897")]
 [assembly: System.Reflection.AssemblyProductAttribute("OnePro.API")]
 [assembly: System.Reflection.AssemblyTitleAttribute("OnePro.API")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
