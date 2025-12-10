@@ -1,0 +1,3 @@
+﻿<Project>
+  <Import Project="..\build\OnePro.API.props" />
+</Project>

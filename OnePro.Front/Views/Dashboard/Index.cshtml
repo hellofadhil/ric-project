@@ -1,0 +1,74 @@
+@{
+    ViewData["Title"] = "Dashboard";
+    Layout = "_LayoutDashboard";
+}
+
+<div class="text-2xl font-bold mb-6">
+    Welcome, @Context.Session.GetString("UserEmail") 👋
+</div>
+
+<!-- Stats Cards -->
+<div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+
+    <div class="bg-white rounded-xl shadow p-5">
+        <div class="text-gray-500">Total RIC</div>
+        <div class="text-3xl font-bold text-red-600">124</div>
+    </div>
+
+    <div class="bg-white rounded-xl shadow p-5">
+        <div class="text-gray-500">Completed</div>
+        <div class="text-3xl font-bold text-green-600">67</div>
+    </div>
+
+    <div class="bg-white rounded-xl shadow p-5">
+        <div class="text-gray-500">Pending</div>
+        <div class="text-3xl font-bold text-yellow-600">28</div>
+    </div>
+
+    <div class="bg-white rounded-xl shadow p-5">
+        <div class="text-gray-500">Rejected</div>
+        <div class="text-3xl font-bold text-red-600">12</div>
+    </div>
+
+</div>
+
+<!-- Table -->
+<div class="mt-10 bg-white shadow rounded-xl p-6 overflow-x-auto">
+    <div class="flex justify-between items-center mb-4">
+        <div class="font-bold text-lg">Recent Activities</div>
+        <button class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">
+            View All
+        </button>
+    </div>
+
+    <table class="min-w-full border-collapse">
+        <thead class="bg-gray-50 text-gray-700">
+            <tr>
+                <th class="p-3 text-left">Title</th>
+                <th class="p-3 text-left">Status</th>
+                <th class="p-3 text-left">Date</th>
+            </tr>
+        </thead>
+        <tbody class="text-gray-700">
+
+            <tr class="border-t hover:bg-gray-50">
+                <td class="p-3">Create RIC Proposal - Branch</td>
+                <td class="p-3 text-green-600">Completed</td>
+                <td class="p-3">27 Nov 2025</td>
+            </tr>
+
+            <tr class="border-t hover:bg-gray-50">
+                <td class="p-3">Process Approval SARM</td>
+                <td class="p-3 text-yellow-600">Pending</td>
+                <td class="p-3">25 Nov 2025</td>
+            </tr>
+
+            <tr class="border-t hover:bg-gray-50">
+                <td class="p-3">Business Process Review</td>
+                <td class="p-3 text-red-600">Rejected</td>
+                <td class="p-3">21 Nov 2025</td>
+            </tr>
+
+        </tbody>
+    </table>
+</div>

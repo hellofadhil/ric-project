@@ -1,0 +1,134 @@
+@using OnePro.Front.Models
+@using OnePro.Front.Helpers
+@model List<RicItemResponse>
+
+@{
+    ViewData["Title"] = "RIC List";
+    Layout = "_LayoutDashboard";
+}
+
+<div class="max-w-6xl mx-auto mt-4 bg-white border border-gray-200 shadow-xl rounded-2xl p-6">
+    @* Header Section *@
+    <header class="flex justify-between items-center mb-6">
+        <h1 class="text-2xl font-semibold text-gray-800">RIC New Development & Enhancement</h1>
+        <a asp-action="Create"
+           class="inline-flex items-center px-4 py-2 text-sm font-medium rounded-xl 
+                  bg-red-600 hover:bg-red-700 text-white transition-colors duration-200">
+            <i class="ri-add-line mr-1"></i>
+            Create RIC
+        </a>
+    </header>
+
+    @* Table Section *@
+    <div class="overflow-x-auto rounded-xl border border-gray-200">
+        <table class="min-w-full text-sm text-left text-gray-700">
+            <thead class="bg-gray-100 text-gray-600 uppercase text-xs">
+                <tr>
+                    <th scope="col" class="px-4 py-3 w-32">ID</th>
+                    <th scope="col" class="px-4 py-3">Judul</th>
+                    @* <th scope="col" class="px-4 py-3">Permasalahan</th> *@
+                    <th scope="col" class="px-4 py-3">User PIC</th>
+                    <th scope="col" class="px-4 py-3 w-28">Status</th>
+                    <th scope="col" class="px-4 py-3 w-36">Last Update</th>
+                    <th scope="col" class="px-4 py-3 w-32 text-center">Actions</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-200 bg-white">
+                @if (Model?.Any() == true)
+                {
+                    foreach (var item in Model)
+                    {
+                        <tr class="hover:bg-gray-50 transition-colors duration-150">
+                            <td class="px-4 py-3 text-xs text-gray-500 font-mono">
+                                @item.Id
+                            </td>
+                            <td class="px-4 py-3 font-medium text-gray-900">
+                                @item.Judul
+                            </td>
+                            @* <td class="px-4 py-3 text-gray-700">
+                                @item.Permasalahan.TruncateWords(30)
+                            </td> *@
+                            <td class="px-4 py-3 text-gray-700">
+                                @item.UserName
+                            </td>
+                            <td class="px-4 py-3">
+                                <span class="@GetStatusBadgeClass(item.Status) px-2 py-1 rounded-full text-xs font-medium">
+                                    @item.Status
+                                </span>
+                            </td>
+                            <td class="px-4 py-3 text-gray-600 text-xs">
+                                @item.UpdatedAt.ToString("dd/MM/yyyy HH:mm")
+                            </td>
+                            <td class="px-4 py-3">
+                                <div class="flex ">
+                                    @* Detail - Always visible *@
+                                    <a asp-action="Details" asp-route-id="@item.Id"
+                                       title="View Details"
+                                       class="p-1.5 rounded-lg hover:bg-blue-100 transition-colors duration-200">
+                                        <i class="ri-eye-line text-blue-600 text-lg"></i>
+                                    </a>
+
+                                    @* Draft-only actions *@
+                                    @if (item.Status == "Draft")
+                                    {
+                                        @* Edit *@
+                                        <a asp-action="Edit" asp-route-id="@item.Id"
+                                           title="Edit RIC"
+                                           class="p-1.5 rounded-lg hover:bg-yellow-100 transition-colors duration-200">
+                                            <i class="ri-edit-2-line text-yellow-600 text-lg"></i>
+                                        </a>
+
+                                        @* Delete *@
+                                        <form asp-action="Delete" asp-route-id="@item.Id" method="post" class="inline">
+                                            @Html.AntiForgeryToken()
+                                            <button type="submit" 
+                                                    title="Delete RIC"
+                                                    onclick="return confirm('Yakin ingin menghapus RIC ini?')"
+                                                    class="p-1.5 rounded-lg hover:bg-red-100 transition-colors duration-200">
+                                                <i class="ri-delete-bin-line text-red-600 text-lg"></i>
+                                            </button>
+                                        </form>
+
+                                        @* Submit *@
+                                        <form asp-action="Submit" asp-route-id="@item.Id" method="post" class="inline">
+                                            @Html.AntiForgeryToken()
+                                            <button type="submit" 
+                                                    title="Submit to BR"
+                                                    onclick="return confirm('Kirim RIC ini ke BR?')"
+                                                    class="p-1.5 rounded-lg hover:bg-green-100 transition-colors duration-200">
+                                                <i class="ri-send-plane-line text-green-600 text-lg"></i>
+                                            </button>
+                                        </form>
+                                    }
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                }
+                else
+                {
+                    <tr>
+                        <td colspan="7" class="px-4 py-8 text-center text-gray-500">
+                            <i class="ri-inbox-line text-4xl text-gray-300 mb-2"></i>
+                            <p>Belum ada RIC untuk group kamu.</p>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@functions {
+    private string GetStatusBadgeClass(string status)
+    {
+        return status switch
+        {
+            "Draft" => "bg-gray-100 text-gray-700",
+            "Submitted" => "bg-blue-100 text-blue-700",
+            "Approved" => "bg-green-100 text-green-700",
+            "Rejected" => "bg-red-100 text-red-700",
+            _ => "bg-gray-100 text-gray-600"
+        };
+    }
+}
