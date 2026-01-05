@@ -40,10 +40,16 @@ public class OneProDbContext(DbContextOptions<OneProDbContext> options) : DbCont
             e.Property(x => x.ExcpectedCompletionTargetFile).HasStringListConversion();
         });
 
+        // builder.Entity<FormRicHistory>(e =>
+        // {
+        //     e.Property(x => x.Snapshot).HasColumnType("nvarchar(max)");
+        //     e.Property(x => x.EditedFields).HasColumnType("nvarchar(max)");
+        // });
+
         builder.Entity<FormRicHistory>(e =>
         {
-            e.Property(x => x.Snapshot).HasColumnType("nvarchar(max)");
-            e.Property(x => x.EditedFields).HasColumnType("nvarchar(max)");
+            e.Property(x => x.SnapshotJson).HasColumnType("nvarchar(max)");
+            e.Property(x => x.EditedFieldsJson).HasColumnType("nvarchar(max)");
         });
 
         builder.Entity<FormRic>().Property(p => p.Status).HasConversion<string>();

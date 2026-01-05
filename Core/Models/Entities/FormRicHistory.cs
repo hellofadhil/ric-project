@@ -4,19 +4,20 @@ namespace Core.Models.Entities
 {
     public class FormRicHistory
     {
-        [Key]
-        public Guid Id { get; set; } = Guid.NewGuid();
-
+        public Guid Id { get; set; }
         public Guid IdFormRic { get; set; }
         public Guid IdEditor { get; set; }
 
         public int Version { get; set; }
-        public string Snapshot { get; set; } = default!;
-        public string? EditedFields { get; set; }
 
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        // snapshot FULL sebelum perubahan
+        public string SnapshotJson { get; set; } = default!;
 
-        public FormRic? FormRic { get; set; }
+        // diff aja
+        public string? EditedFieldsJson { get; set; }
+
+        public DateTime CreatedAt { get; set; }
+
         public User? Editor { get; set; }
     }
 }

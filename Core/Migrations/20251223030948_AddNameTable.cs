@@ -177,6 +177,29 @@ namespace Core.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "FormRicHistories",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    IdFormRic = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    IdEditor = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Version = table.Column<int>(type: "int", nullable: false),
+                    SnapshotJson = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    EditedFieldsJson = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    EditorId = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_FormRicHistories", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_FormRicHistories_Users_EditorId",
+                        column: x => x.EditorId,
+                        principalTable: "Users",
+                        principalColumn: "Id");
+                });
+
+            migrationBuilder.CreateTable(
                 name: "FormRics",
                 columns: table => new
                 {
@@ -286,35 +309,6 @@ namespace Core.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "FormRicHistories",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    IdFormRic = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    IdEditor = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    Version = table.Column<int>(type: "int", nullable: false),
-                    Snapshot = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    EditedFields = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    FormRicId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
-                    EditorId = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_FormRicHistories", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_FormRicHistories_FormRics_FormRicId",
-                        column: x => x.FormRicId,
-                        principalTable: "FormRics",
-                        principalColumn: "Id");
-                    table.ForeignKey(
-                        name: "FK_FormRicHistories_Users_EditorId",
-                        column: x => x.EditorId,
-                        principalTable: "Users",
-                        principalColumn: "Id");
-                });
-
-            migrationBuilder.CreateTable(
                 name: "ReviewFormRics",
                 columns: table => new
                 {
@@ -390,11 +384,6 @@ namespace Core.Migrations
                 name: "IX_FormRicHistories_EditorId",
                 table: "FormRicHistories",
                 column: "EditorId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_FormRicHistories_FormRicId",
-                table: "FormRicHistories",
-                column: "FormRicId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_FormRics_GroupId",

@@ -1,22 +1,3 @@
-// using Core.Models.Entities;
-// using Core.ViewModels;
-
-// namespace OnePro.API.Interfaces
-// {
-//     public interface IRicRepository
-//     {
-//         Task<List<FormRicResponse>> GetAllAsync();
-//         Task<FormRicResponse?> GetByIdAsync(Guid id);
-
-//         Task<bool> CreateAsync(FormRic model);
-//         Task<bool> UpdateAsync(FormRic model);
-//         Task<bool> DeleteAsync(Guid id);
-//     }
-// }
-
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 using Core.Models.Entities;
 
 namespace OnePro.API.Interfaces
@@ -25,9 +6,16 @@ namespace OnePro.API.Interfaces
     {
         Task<List<RicListItemResponse>> GetAllByGroupAsync(Guid groupId);
         Task<FormRic?> GetByIdAsync(Guid id);
+        Task<FormRicDetailResponse?> GetDetailByIdAsync(Guid id);
 
         Task<bool> CreateAsync(FormRic model);
         Task<bool> UpdateAsync(FormRic model);
+        Task<bool> ResubmitAfterRejection(FormRic model, Guid editorId);
+        Task<bool> MoveRicToNextStageAsync(FormRic model, Guid actorId);
+
         Task<bool> DeleteAsync(Guid id);
+
+        Task AddHistoryAsync(FormRicHistory history);
+        Task AddReviewAsync(ReviewFormRic review);
     }
 }

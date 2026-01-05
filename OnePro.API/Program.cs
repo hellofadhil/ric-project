@@ -1,3 +1,4 @@
+using System.IdentityModel.Tokens.Jwt;
 using System.Text;
 using Core.Models;
 using Core.Settings;
@@ -34,6 +35,7 @@ builder
     .Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
+        options.MapInboundClaims = false;
         options.TokenValidationParameters = new()
         {
             ValidateIssuer = false,
@@ -42,6 +44,7 @@ builder
             IssuerSigningKey = new SymmetricSecurityKey(
                 Encoding.UTF8.GetBytes(configuration["Key:Jwt"]!)
             ),
+            RoleClaimType = "role",
         };
     });
 
@@ -87,7 +90,6 @@ app.UseSwaggerUI(c =>
     c.SwaggerEndpoint("/swagger/v1/swagger.json", "OnePro API");
     c.RoutePrefix = string.Empty;
 });
-
 
 // middleware
 app.UseCors("AllowOrigin");

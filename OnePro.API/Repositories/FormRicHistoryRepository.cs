@@ -13,8 +13,8 @@ namespace OnePro.API.Repositories
 
         public async Task<List<FormRicHistoryResponse>> GetAllAsync()
         {
-            var data = await _context.FormRicHistoryResponses!
-                .FromSqlRaw("EXEC SP_FormRicHistories_Get")
+            var data = await _context
+                .FormRicHistoryResponses!.FromSqlRaw("EXEC SP_FormRicHistories_Get")
                 .ToListAsync();
 
             return data;
@@ -24,8 +24,8 @@ namespace OnePro.API.Repositories
         {
             var pId = new SqlParameter("@Id", id);
 
-            var data = await _context.FormRicHistoryResponses!
-                .FromSqlRaw("EXEC SP_FormRicHistories_GetById @Id", pId)
+            var data = await _context
+                .FormRicHistoryResponses!.FromSqlRaw("EXEC SP_FormRicHistories_GetById @Id", pId)
                 .ToListAsync();
 
             return data.FirstOrDefault();
@@ -39,8 +39,8 @@ namespace OnePro.API.Repositories
                 new SqlParameter("@IdFormRic", model.IdFormRic),
                 new SqlParameter("@IdEditor", model.IdEditor),
                 new SqlParameter("@Version", model.Version),
-                new SqlParameter("@Snapshot", model.Snapshot),
-                new SqlParameter("@EditedFields", (object?)model.EditedFields ?? string.Empty)
+                new SqlParameter("@Snapshot", model.SnapshotJson),
+                new SqlParameter("@EditedFields", (object?)model.EditedFieldsJson ?? string.Empty),
             };
 
             var result = await _context.Database.ExecuteSqlRawAsync(

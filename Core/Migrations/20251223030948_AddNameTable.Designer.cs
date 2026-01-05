@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Core.Migrations
 {
     [DbContext(typeof(OneProDbContext))]
-    [Migration("20251210032603_AddNameTable")]
+    [Migration("20251223030948_AddNameTable")]
     partial class AddNameTable
     {
         /// <inheritdoc />
@@ -158,13 +158,10 @@ namespace Core.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("EditedFields")
+                    b.Property<string>("EditedFieldsJson")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<Guid?>("EditorId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid?>("FormRicId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<Guid>("IdEditor")
@@ -173,7 +170,7 @@ namespace Core.Migrations
                     b.Property<Guid>("IdFormRic")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<string>("Snapshot")
+                    b.Property<string>("SnapshotJson")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
@@ -183,8 +180,6 @@ namespace Core.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("EditorId");
-
-                    b.HasIndex("FormRicId");
 
                     b.ToTable("FormRicHistories");
                 });
@@ -801,13 +796,7 @@ namespace Core.Migrations
                         .WithMany()
                         .HasForeignKey("EditorId");
 
-                    b.HasOne("Core.Models.Entities.FormRic", "FormRic")
-                        .WithMany()
-                        .HasForeignKey("FormRicId");
-
                     b.Navigation("Editor");
-
-                    b.Navigation("FormRic");
                 });
 
             modelBuilder.Entity("Core.Models.Entities.ReviewFormRic", b =>

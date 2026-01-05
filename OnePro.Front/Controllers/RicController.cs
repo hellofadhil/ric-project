@@ -1,13 +1,13 @@
 using Core.Models.Enums;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Logging;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
+using OnePro.Front.Helpers;
+using OnePro.Front.Mappers;
 using OnePro.Front.Middleware;
 using OnePro.Front.Models;
 using OnePro.Front.Services.Interfaces;
-using OnePro.Front.Helpers;
-using OnePro.Front.Mappers;
 
 namespace OnePro.Front.Controllers
 {
@@ -16,33 +16,50 @@ namespace OnePro.Front.Controllers
     {
         private readonly IRicService _ricService;
         private readonly ILogger<RicController> _logger;
-        private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly IWebHostEnvironment _env;
 
         public RicController(
             IRicService ricService,
             ILogger<RicController> logger,
-            IHttpContextAccessor httpContextAccessor,
             IWebHostEnvironment env
         )
         {
             _ricService = ricService;
             _logger = logger;
-            _httpContextAccessor = httpContextAccessor;
             _env = env;
         }
 
         #region User Views
 
+        [RoleRequired(0, 1, 2, 3)]
         [HttpGet("ric/user")]
         public async Task<IActionResult> UserIndex()
         {
             var token = GetAuthToken();
             if (string.IsNullOrEmpty(token))
-                return RedirectToAction("Login", "Auth");
+                return RedirectToLogin();
 
             var rics = await _ricService.GetMyRicsAsync(token);
             return View("~/Views/Ric/User/Index.cshtml", rics);
+        }
+
+        [HttpGet("ric/br/review")]
+        public async Task<IActionResult> ReviewIndex()
+        {
+            var token = GetAuthToken();
+            if (string.IsNullOrEmpty(token))
+                return RedirectToLogin();
+
+            var userRole = HttpContext.Session.GetString("UserRole"); // "0","1","4",...
+            _logger.LogInformation(
+                "ReviewIndex accessed. UserRole from session: {UserRole}",
+                userRole
+            );
+
+            ViewBag.UserRole = userRole;
+
+            var rics = await _ricService.GetMyRicsAsync(token);
+            return View("~/Views/Ric/Review/Index.cshtml", rics);
         }
 
         [RoleRequired(1, 4)]
@@ -51,7 +68,7 @@ namespace OnePro.Front.Controllers
         {
             var token = GetAuthToken();
             if (string.IsNullOrEmpty(token))
-                return RedirectToAction("Login", "Auth");
+                return RedirectToLogin();
 
             return View("~/Views/Ric/User/Create.cshtml", new RicCreateViewModel());
         }
@@ -62,7 +79,10 @@ namespace OnePro.Front.Controllers
         {
             var token = GetAuthToken();
             if (string.IsNullOrEmpty(token))
-                return RedirectToAction("Login", "Auth");
+                return RedirectToLogin();
+
+            if (!ModelState.IsValid)
+                return View("~/Views/Ric/User/Create.cshtml", model);
 
             try
             {
@@ -80,7 +100,7 @@ namespace OnePro.Front.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error creating RIC");
-                ModelState.AddModelError("", "Terjadi kesalahan saat membuat RIC.");
+                ModelState.AddModelError(string.Empty, "Terjadi kesalahan saat membuat RIC.");
                 return View("~/Views/Ric/User/Create.cshtml", model);
             }
         }
@@ -90,13 +110,13 @@ namespace OnePro.Front.Controllers
         {
             var token = GetAuthToken();
             if (string.IsNullOrEmpty(token))
-                return RedirectToAction("Login", "Auth");
+                return RedirectToLogin();
 
             var ric = await _ricService.GetRicByIdAsync(id, token);
             if (ric == null)
                 return NotFound();
 
-            if (ric.Status != (int)StatusRic.Draft)
+            if ((StatusRic)ric.Status != StatusRic.Draft)
             {
                 TempData["ErrorMessage"] = "RIC hanya bisa diedit kalau status masih Draft.";
                 return RedirectToAction(nameof(UserIndex));
@@ -108,19 +128,91 @@ namespace OnePro.Front.Controllers
             return View("~/Views/Ric/User/Edit.cshtml", vm);
         }
 
+        [HttpGet("ric/user/update/{id:guid}")]
+        public async Task<IActionResult> Update(Guid id)
+        {
+            var token = GetAuthToken();
+            if (string.IsNullOrEmpty(token))
+                return RedirectToLogin();
+
+            var ric = await _ricService.GetRicByIdAsync(id, token);
+            if (ric == null)
+                return NotFound();
+
+            if ((StatusRic)ric.Status != StatusRic.Return_BR_To_User)
+            {
+                TempData["ErrorMessage"] =
+                    "RIC hanya bisa diupdate kalau status masih Return_BR_To_User.";
+                return RedirectToAction(nameof(UserIndex));
+            }
+
+            var vm = RicMapper.MapToEditViewModel(ric);
+            ModelState.Clear();
+
+            return View("~/Views/Ric/User/Update.cshtml", vm);
+        }
+
+        [HttpPost("ric/user/update/{id:guid}")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Update(Guid id, RicCreateViewModel model, string action)
+        {
+            var token = GetAuthToken();
+            if (string.IsNullOrEmpty(token))
+                return RedirectToLogin();
+
+            if (!ModelState.IsValid)
+                return View("~/Views/Ric/User/Update.cshtml", model);
+
+            var existing = await _ricService.GetRicByIdAsync(id, token);
+            if (existing == null)
+                return NotFound();
+
+            if ((StatusRic)existing.Status != StatusRic.Return_BR_To_User)
+            {
+                TempData["ErrorMessage"] =
+                    "RIC hanya bisa diupdate kalau status masih Return_BR_To_User.";
+                return RedirectToAction(nameof(UserIndex));
+            }
+
+            try
+            {
+                // action di UI sekarang cuma "submit"
+                var dto = await RicMapper.MapToResubmitRequestAsync(
+                    model,
+                    action,
+                    existing,
+                    files => FileStorageHelper.SaveRicFilesAsync(files, _env.WebRootPath, _logger)
+                );
+
+                await _ricService.ResubmitRicAsync(id, dto, token);
+
+                TempData["SuccessMessage"] = "RIC berhasil di-resubmit!";
+                return RedirectToAction(nameof(UserIndex));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error resubmitting RIC {Id}", id);
+                ModelState.AddModelError(string.Empty, "Terjadi kesalahan saat resubmit RIC.");
+                return View("~/Views/Ric/User/Update.cshtml", model);
+            }
+        }
+
         [HttpPost("ric/user/edit/{id:guid}")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(Guid id, RicCreateViewModel model, string action)
         {
             var token = GetAuthToken();
             if (string.IsNullOrEmpty(token))
-                return RedirectToAction("Login", "Auth");
+                return RedirectToLogin();
+
+            if (!ModelState.IsValid)
+                return View("~/Views/Ric/User/Edit.cshtml", model);
 
             var existing = await _ricService.GetRicByIdAsync(id, token);
             if (existing == null)
                 return NotFound();
 
-            if (existing.Status != (int)StatusRic.Draft)
+            if ((StatusRic)existing.Status != StatusRic.Draft)
             {
                 TempData["ErrorMessage"] = "RIC hanya bisa diedit kalau status masih Draft.";
                 return RedirectToAction(nameof(UserIndex));
@@ -144,10 +236,165 @@ namespace OnePro.Front.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error updating RIC {Id}", id);
-                ModelState.AddModelError("", "Terjadi kesalahan saat update RIC.");
+                ModelState.AddModelError(string.Empty, "Terjadi kesalahan saat update RIC.");
                 return View("~/Views/Ric/User/Edit.cshtml", model);
             }
         }
+
+        #endregion
+
+        #region Review Views (BR/SARM/ECS)
+
+        // GET: buka form review & edit (id di query sekali saja)
+        [RoleRequired(4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15)]
+        [HttpGet("Ric/Review")]
+        public async Task<IActionResult> ReviewEdit(Guid id)
+        {
+            var token = GetAuthToken();
+            if (string.IsNullOrEmpty(token))
+                return RedirectToLogin();
+
+            var ric = await _ricService.GetRicByIdAsync(id, token);
+            if (ric == null)
+                return NotFound();
+
+            var vm = RicMapper.MapToEditViewModel(ric);
+            vm.Id = ric.Id;
+
+            return View("~/Views/Ric/Review/Form.cshtml", vm);
+        }
+
+        [RoleRequired(4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15)]
+        [HttpPost("ric/review")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ReviewForm(
+            RicCreateViewModel model,
+            string action,
+            string? note
+        )
+        {
+            var token = GetAuthToken();
+            if (string.IsNullOrEmpty(token))
+                return RedirectToLogin();
+
+            if (!ModelState.IsValid)
+                return View("~/Views/Ric/Review/Form.cshtml", model);
+
+            if (action == "reject")
+            {
+                await _ricService.RejectAsync(model.Id, note, token);
+                return RedirectToAction(nameof(ReviewIndex));
+                // return View("~/Views/Ric/Review/Form.cshtml", model);
+            }
+
+            ModelState.AddModelError("", "Action tidak valid.");
+            return View("~/Views/Ric/Review/Form.cshtml", model);
+        }
+
+        // [RoleRequired(4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15)]
+        // [HttpPost("ric/review")]
+        // [ValidateAntiForgeryToken]
+        // public async Task<IActionResult> ReviewForm(
+        //     RicCreateViewModel model,
+        //     string action,
+        //     string? note
+        // )
+        // {
+        //     var token = GetAuthToken();
+        //     if (string.IsNullOrEmpty(token))
+        //         return RedirectToLogin();
+
+        //     if (!ModelState.IsValid)
+        //         return View("~/Views/Ric/Review/Form.cshtml", model);
+
+        //     var id = model.Id;
+        //     var userRoleStr = HttpContext.Session.GetString("UserRole"); // "4","5","8",...
+        //     var isBr = userRoleStr is "4" or "5" or "6" or "7";
+        //     var isSarm = userRoleStr is "8" or "9" or "10" or "11";
+        //     var isEcs = userRoleStr is "12" or "13" or "14" or "15";
+
+        //     _logger.LogInformation(
+        //         "ReviewForm POST | Id={Id} | Action={Action} | Note={Note} | UserRoleStr={UserRoleStr} | isBr={isBr}",
+        //         model.Id,
+        //         action,
+        //         note,
+        //         userRoleStr,
+        //         isBr
+        //     );
+
+        //     try
+        //     {
+        //         var existing = await _ricService.GetRicByIdAsync(id, token);
+        //         if (existing == null)
+        //             return NotFound();
+
+        //         // Update konten RIC (kalau reviewer boleh edit)
+        //         var dto = await RicMapper.MapToUpdateRequestAsync(
+        //             id,
+        //             model,
+        //             action,
+        //             existing,
+        //             files => FileStorageHelper.SaveRicFilesAsync(files, _env.WebRootPath, _logger)
+        //         );
+
+        //         _logger.LogInformation(
+        //             "ReviewForm DTO | Id={Id} | Judul={Judul} | Status={Status} | AsIsCount={AsIsCount} | ToBeCount={ToBeCount} | ExpectedCount={ExpectedCount}",
+        //             dto.Id,
+        //             dto.Judul,
+        //             dto.Status,
+        //             dto.AsIsProcessRasciFile?.Count ?? 0,
+        //             dto.ToBeProcessBusinessRasciKkiFile?.Count ?? 0,
+        //             dto.ExcpectedCompletionTargetFile?.Count ?? 0
+        //         );
+
+        //         await _ricService.UpdateRicAsync(id, dto, token);
+
+        //         // Tentukan action string ke backend (backend yang mapping ke status enum)
+        //         string reviewAction;
+        //         if (action == "reject")
+        //         {
+        //             if (isBr)
+        //                 reviewAction = "Reject_BR";
+        //             else if (isSarm)
+        //                 reviewAction = "Reject_SARM";
+        //             else if (isEcs)
+        //                 reviewAction = "Reject_ECS";
+        //             else
+        //                 reviewAction = "Reject_Unknown";
+        //         }
+        //         else
+        //         {
+        //             if (isBr)
+        //                 reviewAction = "Approve_BR";
+        //             else if (isSarm)
+        //                 reviewAction = "Approve_SARM";
+        //             else if (isEcs)
+        //                 reviewAction = "Approve_ECS";
+        //             else
+        //                 reviewAction = "Approve_Unknown";
+        //         }
+
+        //         var reviewDto = new RicReviewRequest { Action = reviewAction, Note = note };
+
+        //         await _ricService.ReviewRicAsync(id, reviewDto, token);
+
+        //         TempData["SuccessMessage"] =
+        //             action == "reject"
+        //                 ? "RIC berhasil direject."
+        //                 : "RIC disetujui dan dilanjutkan.";
+
+        //         return RedirectToAction(nameof(ReviewIndex));
+        //     }
+        //     catch (Exception ex)
+        //     {
+        //         _logger.LogError(ex, "Error review RIC {Id}", id);
+        //         ModelState.AddModelError(
+        //             string.Empty,
+        //             "Terjadi kesalahan saat memproses review RIC."
+        //         );
+        //         return View("~/Views/Ric/Review/Form.cshtml", model);
+        //     }
+        // }
 
         #endregion
 
@@ -156,6 +403,11 @@ namespace OnePro.Front.Controllers
         private string? GetAuthToken()
         {
             return HttpContext.Session.GetString("JwtToken");
+        }
+
+        private IActionResult RedirectToLogin()
+        {
+            return RedirectToAction("Login", "Auth");
         }
 
         #endregion

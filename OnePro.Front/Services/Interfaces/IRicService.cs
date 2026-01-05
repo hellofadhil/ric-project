@@ -9,5 +9,10 @@ namespace OnePro.Front.Services.Interfaces
 
         Task CreateRicAsync(FormRicCreateRequest request, string token);
         Task UpdateRicAsync(Guid id, FormRicUpdateRequest request, string token);
+
+        // NEW: aksi review (approve/reject)
+        // Task ReviewRicAsync(Guid id, RicReviewRequest request, string token);
+        Task RejectAsync(Guid id, string? note, string token);
+        Task ResubmitRicAsync(Guid id, FormRicResubmitRequest request, string token);
     }
 }

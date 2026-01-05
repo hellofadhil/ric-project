@@ -1,3 +1,4 @@
+using Core.Models.Entities;
 using Core.Models.Enums;
 using Newtonsoft.Json;
 
@@ -15,7 +16,7 @@ namespace OnePro.Front.Models
 
     public class RicCreateViewModel
     {
-        public Guid? Id { get; set; }
+        public Guid Id { get; set; }
 
         // Basic fields
         public string JudulPermintaan { get; set; } = string.Empty;
@@ -36,6 +37,9 @@ namespace OnePro.Front.Models
         public List<string>? ExistingAsIsFileUrls { get; set; }
         public List<string>? ExistingToBeFileUrls { get; set; }
         public List<string>? ExistingExpectedCompletionFileUrls { get; set; }
+
+        public List<ReviewRicResponse> Reviews { get; set; } = new();
+        public List<RicHistoryResponse> Histories { get; set; } = new();
     }
 
     public class FormRicCreateRequest
@@ -98,6 +102,37 @@ namespace OnePro.Front.Models
         public string? PotensiValueCreation { get; set; }
         public List<string>? ExcpectedCompletionTargetFile { get; set; }
         public string? HasilSetelahPerbaikan { get; set; }
+        public int Status { get; set; }
+    }
+
+    public class RicReviewRequest
+    {
+        public string Action { get; set; } = default!; // "Approve" / "Reject"
+        public string? Note { get; set; } // catatan BR
+    }
+
+    public class FormRicResubmitRequest
+    {
+        public string? Judul { get; set; }
+        public List<string>? Hastag { get; set; }
+
+        public List<string>? AsIsProcessRasciFile { get; set; }
+
+        public string? Permasalahan { get; set; }
+        public string? DampakMasalah { get; set; }
+        public string? FaktorPenyebabMasalah { get; set; }
+        public string? SolusiSaatIni { get; set; }
+
+        public List<string>? AlternatifSolusi { get; set; }
+
+        public List<string>? ToBeProcessBusinessRasciKkiFile { get; set; }
+
+        public string? PotensiValueCreation { get; set; }
+
+        public List<string>? ExcpectedCompletionTargetFile { get; set; }
+
+        public string? HasilSetelahPerbaikan { get; set; }
+
         public int Status { get; set; }
     }
 }

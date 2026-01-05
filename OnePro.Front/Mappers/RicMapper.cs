@@ -16,9 +16,7 @@ namespace OnePro.Front.Mappers
             var toBeUrls = await saveFilesAsync(model.ToBeProcessFiles);
             var expectedUrls = await saveFilesAsync(model.ExpectedCompletionFiles);
 
-            var status = action == "submit"
-                ? StatusRic.Submitted_To_BR
-                : StatusRic.Draft;
+            var status = action == "submit" ? StatusRic.Submitted_To_BR : StatusRic.Draft;
 
             return new FormRicCreateRequest
             {
@@ -50,27 +48,26 @@ namespace OnePro.Front.Mappers
             var toBeUrls = await saveFilesAsync(model.ToBeProcessFiles);
             var expectedUrls = await saveFilesAsync(model.ExpectedCompletionFiles);
 
-            var status = action == "submit"
-                ? StatusRic.Submitted_To_BR
-                : StatusRic.Draft;
+            var status = action == "submit" ? StatusRic.Submitted_To_BR : StatusRic.Draft;
 
             return new FormRicUpdateRequest
             {
                 Id = id,
                 Judul = model.JudulPermintaan,
                 Hastag = model.Hashtags,
-                AsIsProcessRasciFile =
-                    asIsUrls.Any() ? asIsUrls : existing.AsIsProcessRasciFile,
+                AsIsProcessRasciFile = asIsUrls.Any() ? asIsUrls : existing.AsIsProcessRasciFile,
                 Permasalahan = model.Permasalahan,
                 DampakMasalah = model.DampakMasalah,
                 FaktorPenyebabMasalah = model.FaktorPenyebab,
                 SolusiSaatIni = model.SolusiSaatIni,
                 AlternatifSolusi = model.Alternatifs,
-                ToBeProcessBusinessRasciKkiFile =
-                    toBeUrls.Any() ? toBeUrls : existing.ToBeProcessBusinessRasciKkiFile,
+                ToBeProcessBusinessRasciKkiFile = toBeUrls.Any()
+                    ? toBeUrls
+                    : existing.ToBeProcessBusinessRasciKkiFile,
                 PotensiValueCreation = model.PotentialValue,
-                ExcpectedCompletionTargetFile =
-                    expectedUrls.Any() ? expectedUrls : existing.ExcpectedCompletionTargetFile,
+                ExcpectedCompletionTargetFile = expectedUrls.Any()
+                    ? expectedUrls
+                    : existing.ExcpectedCompletionTargetFile,
                 HasilSetelahPerbaikan = model.HasilSetelahPerbaikan,
                 Status = (int)status,
             };
@@ -94,6 +91,51 @@ namespace OnePro.Front.Mappers
                 ExistingAsIsFileUrls = ric.AsIsProcessRasciFile,
                 ExistingToBeFileUrls = ric.ToBeProcessBusinessRasciKkiFile,
                 ExistingExpectedCompletionFileUrls = ric.ExcpectedCompletionTargetFile,
+            };
+        }
+
+        public static async Task<FormRicResubmitRequest> MapToResubmitRequestAsync(
+            RicCreateViewModel model,
+            string action,
+            RicDetailResponse existing,
+            Func<IEnumerable<IFormFile>?, Task<List<string>>> saveFilesAsync
+        )
+        {
+            var asIsUrls = await saveFilesAsync(model.AsIsRasciFiles);
+            var toBeUrls = await saveFilesAsync(model.ToBeProcessFiles);
+            var expectedUrls = await saveFilesAsync(model.ExpectedCompletionFiles);
+
+            // Resubmit biasanya = submit lagi ke BR
+            // Lu bisa adjust kalau statusnya beda.
+            var status = action == "submit" ? StatusRic.Submitted_To_BR : StatusRic.Draft;
+
+            return new FormRicResubmitRequest
+            {
+                Judul = model.JudulPermintaan,
+                Hastag = model.Hashtags,
+
+                AsIsProcessRasciFile = asIsUrls.Any() ? asIsUrls : existing.AsIsProcessRasciFile,
+
+                Permasalahan = model.Permasalahan,
+                DampakMasalah = model.DampakMasalah,
+                FaktorPenyebabMasalah = model.FaktorPenyebab,
+                SolusiSaatIni = model.SolusiSaatIni,
+
+                AlternatifSolusi = model.Alternatifs,
+
+                ToBeProcessBusinessRasciKkiFile = toBeUrls.Any()
+                    ? toBeUrls
+                    : existing.ToBeProcessBusinessRasciKkiFile,
+
+                PotensiValueCreation = model.PotentialValue,
+
+                ExcpectedCompletionTargetFile = expectedUrls.Any()
+                    ? expectedUrls
+                    : existing.ExcpectedCompletionTargetFile,
+
+                HasilSetelahPerbaikan = model.HasilSetelahPerbaikan,
+
+                Status = (int)status,
             };
         }
     }
