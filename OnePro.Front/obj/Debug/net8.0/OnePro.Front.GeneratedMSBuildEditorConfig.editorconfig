@@ -18,6 +18,10 @@ build_property.GenerateRazorMetadataSourceChecksumAttributes =
 build_property.MSBuildProjectDirectory = C:\Users\gaske\Videos\PertaminaV2\OnePro.Front
 build_property._RazorSourceGeneratorDebug = 
 
+[C:/Users/gaske/Videos/PertaminaV2/OnePro.Front/Views/Auth/Forbidden.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQXV0aFxGb3JiaWRkZW4uY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
 [C:/Users/gaske/Videos/PertaminaV2/OnePro.Front/Views/Auth/Login.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQXV0aFxMb2dpbi5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
@@ -42,12 +46,20 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcSG9tZVxQcml2YWN5LmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
 
+[C:/Users/gaske/Videos/PertaminaV2/OnePro.Front/Views/Ric/Approval/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUmljXEFwcHJvdmFsXEluZGV4LmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
 [C:/Users/gaske/Videos/PertaminaV2/OnePro.Front/Views/Ric/Review/Form.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUmljXFJldmlld1xGb3JtLmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
 
 [C:/Users/gaske/Videos/PertaminaV2/OnePro.Front/Views/Ric/Review/Index.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUmljXFJldmlld1xJbmRleC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/gaske/Videos/PertaminaV2/OnePro.Front/Views/Ric/Review/Sarm.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUmljXFJldmlld1xTYXJtLmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
 
 [C:/Users/gaske/Videos/PertaminaV2/OnePro.Front/Views/Ric/User/Create.cshtml]

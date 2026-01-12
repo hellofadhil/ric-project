@@ -181,9 +181,11 @@
                                         @* @if ((userRole == "4" || userRole == "5" || userRole == "6" || userRole == "7") && *@
                                         @if ((userRole == "4") &&
                                              (item.Status == StatusRic.Submitted_To_BR.ToString() ||
-                                              item.Status == StatusRic.Review_BR.ToString()))
+                                              item.Status == StatusRic.Review_BR.ToString() ||
+                                              item.Status == StatusRic.Return_ECS_To_BR.ToString() ||
+                                              item.Status == StatusRic.Return_SARM_To_BR.ToString() ))
                                         {
-                       <a asp-controller="Ric"
+                       <a asp-controller="RicReview"
    asp-action="ReviewEdit"
    asp-route-id="@item.Id"
    class="inline-flex items-center gap-2 px-3 py-2 rounded-2xl
@@ -192,14 +194,13 @@
     <i class="ri-check-double-line text-base"></i>
     Review
 </a>
-
                                         }
 
                                         @* SARM *@
                                         @if ((userRole == "8" || userRole == "9" || userRole == "10" || userRole == "11") &&
                                              item.Status == StatusRic.Review_SARM.ToString())
                                         {
-                                            <a asp-action="Review" asp-route-id="@item.Id"
+                                            <a asp-controller="RicReview" asp-action="ReviewEdit" asp-route-id="@item.Id"
                                                class="inline-flex items-center gap-2 px-3 py-2 rounded-2xl
                                                       bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold transition"
                                                title="Review RIC (SARM)">
@@ -212,7 +213,7 @@
                                         @if ((userRole == "12" || userRole == "13" || userRole == "14" || userRole == "15") &&
                                              item.Status == StatusRic.Review_ECS.ToString())
                                         {
-                                            <a asp-action="Review" asp-route-id="@item.Id"
+                                            <a asp-controller="RicReview" asp-action="ReviewEdit" asp-route-id="@item.Id"
                                                class="inline-flex items-center gap-2 px-3 py-2 rounded-2xl
                                                       bg-teal-600 hover:bg-teal-700 text-white text-xs font-semibold transition"
                                                title="Review RIC (ECS)">

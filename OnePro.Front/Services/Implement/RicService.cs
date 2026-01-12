@@ -8,10 +8,12 @@ namespace OnePro.Front.Services.Implement
     public class RicService : IRicService
     {
         private readonly IConfiguration _config;
+        private readonly ILogger<RicService> _logger;
 
-        public RicService(IConfiguration config)
+        public RicService(IConfiguration config, ILogger<RicService> logger)
         {
             _config = config;
+            _logger = logger;
         }
 
         public async Task<List<RicItemResponse>> GetMyRicsAsync(string token)
@@ -155,5 +157,95 @@ namespace OnePro.Front.Services.Implement
                 );
             }
         }
+
+        // public async Task ForwardAsync(Guid id, FormRicResubmitRequest data, string token)
+        // {
+        //     var apiUrl = $"{_config["ApiUrl"]}/api/v1/Ric/{id}/forward";
+
+        //     var client = new RestClient(apiUrl);
+        //     var request = new RestRequest("", Method.Put);
+
+        //     request.AddHeader("Authorization", $"Bearer {token}");
+        //     request.AddHeader("Content-Type", "application/json");
+
+        //     request.AddJsonBody(new { data });
+
+        //     var response = await client.ExecuteAsync(request);
+
+        //     if (!response.IsSuccessful)
+        //     {
+        //         throw new Exception(
+        //             $"Reject RIC gagal: {(int)response.StatusCode} - {response.Content}"
+        //         );
+        //     }
+        // }
+
+        public async Task<bool> ForwardAsync(Guid id, FormRicResubmitRequest data, string token)
+        {
+            var apiUrl = $"{_config["ApiUrl"]}/api/v1/Ric/{id}/forward";
+
+            var client = new RestClient(apiUrl);
+            var request = new RestRequest("", Method.Put);
+
+            request.AddHeader("Authorization", $"Bearer {token}");
+            request.AddHeader("Content-Type", "application/json");
+            request.AddJsonBody(data);
+
+            var response = await client.ExecuteAsync(request);
+
+            // 🔥 LOG hasil response (ini yang lu butuhin buat debug)
+            _logger.LogInformation(
+                "FORWARD API RESP | RicId={RicId} | Code={Code} | Success={Success} | Body={Body}",
+                id,
+                (int)response.StatusCode,
+                response.IsSuccessful,
+                response.Content
+            );
+
+            return response.IsSuccessful;
+        }
+
+        // public async Task<bool> ForwardAsync(Guid id, FormRicResubmitRequest data, string token)
+        // {
+        //     var apiUrl = $"{_config["ApiUrl"]}/api/v1/Ric/{id}/forward";
+
+        //     var client = new RestClient(apiUrl);
+        //     var request = new RestRequest("", Method.Put);
+
+        //     request.AddHeader("Authorization", $"Bearer {token}");
+        //     request.AddHeader("Content-Type", "application/json");
+
+        //     // ⚠️ Ini fix body-nya juga (lihat catatan di bawah)
+        //     request.AddJsonBody(data);
+
+        //     var response = await client.ExecuteAsync(request);
+
+        //     return response.IsSuccessful;
+        // }
+
+        // public async Task<bool> ForwardAsync(Guid id, FormRicResubmitRequest request, string token)
+        // {
+        //     using var httpReq = new HttpRequestMessage(HttpMethod.Put, $"api/v1/Ric/{id}/forward");
+
+        //     httpReq.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+        //     var json = JsonSerializer.Serialize(request, new JsonSerializerOptions
+        //     {
+        //         PropertyNamingPolicy = null // karena kita udah kunci nama pake JsonPropertyName
+        //     });
+
+        //     httpReq.Content = new StringContent(json, Encoding.UTF8, "application/json");
+
+        //     using var res = await _http.SendAsync(httpReq);
+
+        //     // Kalo backend balikin 200/204 -> true
+        //     if (res.IsSuccessStatusCode) return true;
+
+        //     // Optional: log body biar gampang debug
+        //     var body = await res.Content.ReadAsStringAsync();
+        //     // TODO: log body (ILogger) kalau ada
+
+        //     return false;
+        // }
     }
 }

@@ -14,5 +14,6 @@ namespace OnePro.Front.Services.Interfaces
         // Task ReviewRicAsync(Guid id, RicReviewRequest request, string token);
         Task RejectAsync(Guid id, string? note, string token);
         Task ResubmitRicAsync(Guid id, FormRicResubmitRequest request, string token);
+        Task<bool> ForwardAsync(Guid id, FormRicResubmitRequest request, string token);
     }
 }

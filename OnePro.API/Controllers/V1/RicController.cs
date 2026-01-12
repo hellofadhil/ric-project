@@ -378,8 +378,16 @@ public class RicController : ControllerBase
         // Role-based status transition + status guard
         if (role == Role.BR_Pic)
         {
-            if (ric.Status != StatusRic.Review_BR)
-                return BadRequest("Status RIC tidak sesuai untuk BR.");
+            if (
+                ric.Status
+                is not (
+                    StatusRic.Submitted_To_BR
+                    or StatusRic.Review_BR
+                    or StatusRic.Return_SARM_To_BR
+                    or StatusRic.Return_ECS_To_BR
+                )
+            )
+                return BadRequest($"BR cannot forward from status {ric.Status}");
 
             ric.Status = StatusRic.Review_SARM;
         }
@@ -395,7 +403,7 @@ public class RicController : ControllerBase
             if (ric.Status != StatusRic.Review_ECS)
                 return BadRequest("Status RIC tidak sesuai untuk ECS.");
 
-            ric.Status = StatusRic.Review_SARM; // ECS balik ke SARM (sesuai cerita lo)
+            ric.Status = StatusRic.Approval_Manager_User; // ECS balik ke SARM (sesuai cerita lo)
         }
         else
         {
@@ -405,6 +413,140 @@ public class RicController : ControllerBase
         return await _repository.MoveRicToNextStageAsync(ric, editorId)
             ? Ok("RIC forwarded successfully.")
             : StatusCode(500, "Failed to forward RIC.");
+    }
+
+    [HttpPut("{id:guid}/approve")]
+    // [Authorize(
+    //     Roles = "Approval_Manager_User,Approval_VP_User,Approval_Manager_BR,Approval_Manager_SARM,Approval_VP_SARM,Approval_Manager_ECS,Approval_VP_ECS"
+    // )]
+    [Authorize(Roles = "User_Manager,User_VP,BR_Manager,SARM_Manager,SARM_VP,ECS_Manager,ECS_VP")]
+    public async Task<IActionResult> Approve(Guid id)
+    {
+        if (!ModelState.IsValid)
+            return ValidationProblem(ModelState);
+
+        var editorId = GetGuid("id");
+        var groupId = GetGuid("groupId");
+        var roleStr = GetString("role");
+
+        if (editorId == Guid.Empty || string.IsNullOrEmpty(roleStr))
+            return Unauthorized();
+
+        if (!Enum.TryParse<Role>(roleStr, out var role))
+            return Forbid("Invalid role.");
+
+        var ric = await _repository.GetByIdAsync(id);
+        if (ric is null)
+            return NotFound("RIC not found.");
+
+        // kalau rule lo memang harus satu group
+        // if (ric.IdGroupUser != groupId)
+        //     return Forbid();
+
+        // Update fields (kalau forward memang membawa revisi data)
+        // ric.Judul = req.Judul;
+        // ric.Hastag = req.Hastag;
+        // ric.AsIsProcessRasciFile = req.AsIsProcessRasciFile;
+        // ric.Permasalahan = req.Permasalahan;
+        // ric.DampakMasalah = req.DampakMasalah;
+        // ric.FaktorPenyebabMasalah = req.FaktorPenyebabMasalah;
+        // ric.SolusiSaatIni = req.SolusiSaatIni;
+        // ric.AlternatifSolusi = req.AlternatifSolusi;
+        // ric.ToBeProcessBusinessRasciKkiFile = req.ToBeProcessBusinessRasciKkiFile;
+        // ric.PotensiValueCreation = req.PotensiValueCreation;
+        // ric.ExcpectedCompletionTargetFile = req.ExcpectedCompletionTargetFile;
+        // ric.HasilSetelahPerbaikan = req.HasilSetelahPerbaikan;
+
+        // ric.UpdatedAt = DateTime.UtcNow;
+
+        // Role-based status transition + status guard
+        if (role == Role.User_Manager)
+        {
+            if (ric.Status is not (StatusRic.Approval_Manager_User))
+                return BadRequest($"BR cannot forward from status {ric.Status}");
+
+            ric.Status = StatusRic.Approval_VP_User;
+        }
+        else if (role == Role.User_VP)
+        {
+            if (ric.Status is not (StatusRic.Approval_VP_User))
+                return BadRequest($"BR cannot forward from status {ric.Status}");
+
+            ric.Status = StatusRic.Approval_Manager_BR;
+        }
+        else if (role == Role.BR_Manager)
+        {
+            if (ric.Status is not (StatusRic.Approval_Manager_BR))
+                return BadRequest($"BR cannot forward from status {ric.Status}");
+
+            ric.Status = StatusRic.Approval_Manager_SARM;
+        }
+        else if (role == Role.SARM_Manager)
+        {
+            if (ric.Status is not (StatusRic.Approval_Manager_SARM))
+                return BadRequest($"BR cannot forward from status {ric.Status}");
+
+            ric.Status = StatusRic.Approval_VP_SARM;
+        }
+        else if (role == Role.SARM_VP)
+        {
+            if (ric.Status is not (StatusRic.Approval_VP_SARM))
+                return BadRequest($"BR cannot forward from status {ric.Status}");
+
+            ric.Status = StatusRic.Approval_Manager_ECS;
+        }
+        else if (role == Role.ECS_Manager)
+        {
+            if (ric.Status is not (StatusRic.Approval_Manager_ECS))
+                return BadRequest($"BR cannot forward from status {ric.Status}");
+
+            ric.Status = StatusRic.Approval_VP_ECS;
+        }
+        else if (role == Role.ECS_VP)
+        {
+            if (ric.Status is not (StatusRic.Approval_VP_ECS))
+                return BadRequest($"BR cannot forward from status {ric.Status}");
+
+            ric.Status = StatusRic.Done;
+        }
+        // if (role == Role.BR_Pic)
+        // {
+        //     if (
+        //         ric.Status
+        //         is not (
+        //             StatusRic.Submitted_To_BR
+        //             or StatusRic.Review_BR
+        //             or StatusRic.Return_SARM_To_BR
+        //             or StatusRic.Return_ECS_To_BR
+        //         )
+        //     )
+        //         return BadRequest($"BR cannot forward from status {ric.Status}");
+
+        //     ric.Status = StatusRic.Review_SARM;
+        // }
+        // else if (role == Role.SARM_Pic)
+        // {
+        //     if (ric.Status != StatusRic.Review_SARM)
+        //         return BadRequest("Status RIC tidak sesuai untuk SARM.");
+
+        //     ric.Status = StatusRic.Review_ECS;
+        // }
+        // else if (role == Role.ECS_Pic)
+        // {
+        //     if (ric.Status != StatusRic.Review_ECS)
+        //         return BadRequest("Status RIC tidak sesuai untuk ECS.");
+
+        //     ric.Status = StatusRic.Approval_Manager_User;
+        // }
+        // else
+        // {
+        //     return Forbid("Role not allowed.");
+        // }
+
+        return Ok("Mantap gan");
+        // return await _repository.MoveRicToNextStageAsync(ric, editorId)
+        //     ? Ok("RIC forwarded successfully.")
+        //     : StatusCode(500, "Failed to forward RIC.");
     }
 
     [HttpDelete("{id:guid}")]

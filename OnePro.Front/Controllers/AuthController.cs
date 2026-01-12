@@ -13,6 +13,12 @@ namespace OnePro.Front.Controllers
             _authService = authService;
         }
 
+        public IActionResult Forbidden()
+        {
+            Response.StatusCode = StatusCodes.Status403Forbidden;
+            return View();
+        }
+
         [HttpGet]
         public IActionResult Login() => View();
 
