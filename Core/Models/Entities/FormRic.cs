@@ -53,6 +53,38 @@ namespace Core.Models.Entities
         public DateTime UpdatedAt { get; set; }
     }
 
+    // public class RicDetailResponse
+    // {
+    //     public Guid Id { get; set; }
+
+    //     public string Judul { get; set; } = default!;
+    //     public List<string>? Hastag { get; set; }
+    //     public List<string>? AsIsProcessRasciFile { get; set; }
+
+    //     public string? Permasalahan { get; set; }
+    //     public string? DampakMasalah { get; set; }
+    //     public string? FaktorPenyebabMasalah { get; set; }
+    //     public string? SolusiSaatIni { get; set; }
+
+    //     public List<string>? AlternatifSolusi { get; set; }
+    //     public List<string>? ToBeProcessBusinessRasciKkiFile { get; set; }
+    //     public string? PotensiValueCreation { get; set; }
+
+    //     public List<string>? ExcpectedCompletionTargetFile { get; set; }
+
+    //     [JsonProperty("hasilSetelahPerbaikan")]
+    //     public string? HasilSetelahPerbaikan { get; set; }
+
+    //     public int Status { get; set; }
+
+    //     // ✅ TAMBAH INI
+    //     [JsonProperty("reviews")]
+    //     public List<ReviewRicResponse>? Reviews { get; set; }
+
+    //     [JsonProperty("histories")]
+    //     public List<RicHistoryResponse>? Histories { get; set; }
+    // }
+
     public class FormRicDetailResponse
     {
         // public Guid Id { get; set; }

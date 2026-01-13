@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Core.Migrations
 {
     [DbContext(typeof(OneProDbContext))]
-    [Migration("20251223030948_AddNameTable")]
+    [Migration("20260113062522_AddNameTable")]
     partial class AddNameTable
     {
         /// <inheritdoc />
