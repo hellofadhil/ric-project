@@ -61,6 +61,31 @@ namespace OnePro.Front.Models
 
     // === Tambahan ini yang lagi dicari compiler ===
 
+    // public class RicDetailResponse
+    // {
+    //     public Guid Id { get; set; }
+
+    //     public string Judul { get; set; } = default!;
+    //     public List<string>? Hastag { get; set; }
+    //     public List<string>? AsIsProcessRasciFile { get; set; }
+
+    //     public string? Permasalahan { get; set; }
+    //     public string? DampakMasalah { get; set; }
+    //     public string? FaktorPenyebabMasalah { get; set; }
+    //     public string? SolusiSaatIni { get; set; }
+
+    //     public List<string>? AlternatifSolusi { get; set; }
+    //     public List<string>? ToBeProcessBusinessRasciKkiFile { get; set; }
+    //     public string? PotensiValueCreation { get; set; }
+
+    //     public List<string>? ExcpectedCompletionTargetFile { get; set; }
+
+    //     [JsonProperty("hasilSetelahPerbaikan")]
+    //     public string? HasilSetelahPerbaikan { get; set; }
+
+    //     public int Status { get; set; }
+    // }
+
     public class RicDetailResponse
     {
         public Guid Id { get; set; }
@@ -84,6 +109,13 @@ namespace OnePro.Front.Models
         public string? HasilSetelahPerbaikan { get; set; }
 
         public int Status { get; set; }
+
+        // ✅ TAMBAH INI
+        [JsonProperty("reviews")]
+        public List<ReviewRicResponse>? Reviews { get; set; }
+
+        [JsonProperty("histories")]
+        public List<RicHistoryResponse>? Histories { get; set; }
     }
 
     public class FormRicUpdateRequest
@@ -134,5 +166,42 @@ namespace OnePro.Front.Models
         public string? HasilSetelahPerbaikan { get; set; }
 
         public int Status { get; set; }
+    }
+
+    public class ReviewRicResponse
+    {
+        public Guid Id { get; set; }
+
+        [JsonProperty("catatan")]
+        public string? Catatan { get; set; }
+
+        [JsonProperty("roleReview")]
+        public string? RoleReview { get; set; }
+
+        [JsonProperty("userName")]
+        public string? UserName { get; set; }
+
+        [JsonProperty("createdAt")]
+        public DateTime CreatedAt { get; set; }
+    }
+
+    public class RicHistoryResponse
+    {
+        public Guid Id { get; set; }
+
+        [JsonProperty("version")]
+        public int Version { get; set; }
+
+        [JsonProperty("editorName")]
+        public string? EditorName { get; set; }
+
+        [JsonProperty("editedFields")]
+        public string? EditedFields { get; set; }
+
+        [JsonProperty("snapshot")]
+        public string? Snapshot { get; set; }
+
+        [JsonProperty("createdAt")]
+        public DateTime CreatedAt { get; set; }
     }
 }
