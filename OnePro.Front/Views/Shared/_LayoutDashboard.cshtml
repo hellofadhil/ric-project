@@ -1,6 +1,8 @@
 @{
     Layout = null;
 
+    var userRole = Context.Session.GetString("UserRole") ?? "";
+
     var name = Context.Session.GetString("UserName") ?? "User";
     var email = Context.Session.GetString("UserEmail") ?? "";
     var initials = name.Length > 1
@@ -9,7 +11,7 @@
 
     var path = Context.Request.Path.Value?.ToLower() ?? "";
 
-    bool isDashboard = path == "/dashboard";
+    bool isDashboard = path == "/" || path == "/dashboard";
 
     bool isRicDashboard = path == "/ric" || path.StartsWith("/ric/dashboard");
     bool isRicApproval = path.StartsWith("/ric/approval");
@@ -30,89 +32,62 @@
     <link href="https://cdn.jsdelivr.net/npm/remixicon/fonts/remixicon.css" rel="stylesheet">
 
     <style>
-        .nav-item {
-            display:flex; align-items:center; gap:.6rem;
-            padding:.55rem .75rem;
-            border-radius:.75rem;
-            font-size:.875rem;
-            color: rgb(71 85 105);
+        :root{
+            --red: 220 38 38;       /* red-600 */
+            --red-soft: 254 226 226;
+            --text: 51 65 85;
+            --text-strong: 15 23 42;
+            --muted: 241 245 249;
+        }
+
+        .nav-item{
+            display:flex; align-items:center; gap:.65rem;
+            padding:.6rem .9rem;
+            border-radius:1rem;
+            font-size:.9rem;
+            color: rgb(var(--text));
             transition:.15s;
-        }
-        .nav-item:hover {
-            background: rgb(248 250 252);
-            color: rgb(15 23 42);
-        }
-        .nav-item.active {
-            background: rgba(99,102,241,.10);
-            color: rgb(79 70 229);
-            font-weight:600;
             position:relative;
         }
-        .nav-item.active::before {
+        .nav-item:hover{
+            background: rgb(var(--muted));
+            color: rgb(var(--text-strong));
+        }
+        .nav-item.active{
+            background: rgb(var(--red-soft));
+            color: rgb(var(--red));
+            font-weight:700;
+        }
+        .nav-item.active::before{
             content:"";
             position:absolute;
-            left:-8px;
-            top:10px;
+            left:-10px;
+            top:50%;
+            transform:translateY(-50%);
             width:4px;
-            height:22px;
+            height:26px;
             border-radius:999px;
-            background: rgb(79 70 229);
+            background: rgb(var(--red));
         }
 
-        .nav-group-btn {
-            width:100%;
-            display:flex;
-            align-items:center;
-            justify-content:space-between;
-            padding:.55rem .75rem;
-            border-radius:.75rem;
-            font-size:.875rem;
-            color: rgb(71 85 105);
-            transition:.15s;
-        }
-        .nav-group-btn:hover {
-            background: rgb(248 250 252);
-            color: rgb(15 23 42);
-        }
-        .nav-group-btn.open {
-            background: rgba(99,102,241,.10);
-            color: rgb(79 70 229);
-            font-weight:600;
-        }
-
-        .sub-item {
+        .sub-item{
             display:flex;
             align-items:center;
             gap:.5rem;
-            padding:.5rem .75rem .5rem 2.25rem;
-            border-radius:.75rem;
+            padding:.5rem .9rem .5rem 2.6rem;
+            border-radius:.85rem;
             font-size:.85rem;
             color: rgb(100 116 139);
             transition:.15s;
         }
-        .sub-item:hover {
-            background: rgb(248 250 252);
-            color: rgb(15 23 42);
+        .sub-item:hover{
+            background: rgb(var(--muted));
+            color: rgb(var(--text-strong));
         }
-        .sub-item.active {
-            background: rgba(99,102,241,.10);
-            color: rgb(79 70 229);
+        .sub-item.active{
+            background: rgb(var(--red-soft));
+            color: rgb(var(--red));
             font-weight:600;
-        }
-
-        .collapse {
-            max-height:0;
-            overflow:hidden;
-            transition:max-height .25s ease;
-        }
-        .collapse.open {
-            max-height:300px;
-        }
-        .chev {
-            transition:transform .2s ease;
-        }
-        .rotate {
-            transform:rotate(180deg);
         }
     </style>
 </head>
@@ -125,14 +100,13 @@
         <button onclick="toggleSidebar()" class="lg:hidden text-xl">
             <i class="ri-menu-line"></i>
         </button>
-
         <img src="https://akiradata.co.id/wp-content/uploads/2020/05/logo-pertamina.png"
              class="h-10 w-auto" />
     </div>
 
     <div class="relative">
         <button onclick="toggleProfileMenu()" class="flex items-center gap-2 bg-slate-100 px-2 py-1 rounded-full">
-            <div class="h-9 w-9 rounded-full bg-slate-800 text-white text-sm font-semibold flex items-center justify-center">
+            <div class="h-9 w-9 rounded-full bg-red-700 text-white text-sm font-semibold flex items-center justify-center">
                 @initials
             </div>
             <i id="caretIcon" class="ri-arrow-down-s-line transition"></i>
@@ -149,7 +123,7 @@
 
             <form method="post" action="@Url.Action("Logout","Auth")">
                 @Html.AntiForgeryToken()
-                <button class="w-full text-left px-4 py-2 text-sm text-rose-600 hover:bg-rose-50">
+                <button class="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50">
                     Logout
                 </button>
             </form>
@@ -157,19 +131,16 @@
     </div>
 </header>
 
-<!-- SIDEBAR -->
+<!-- SIDEBAR (lebih kecil) -->
 <aside id="sidebar"
-       class="fixed inset-y-0 left-0 z-40 w-100 bg-white border-r shadow-sm
+       class="fixed inset-y-0 left-0 z-40 w-56 bg-white border-r shadow-sm
               transform -translate-x-full lg:translate-x-0 transition">
 
-    <div class="p-4 border-b">
+    <!-- BRAND (hapus tulisan OnePro) -->
+    <div class="p-2 border-b">
         <div class="flex items-center gap-3">
-            <div class="h-10 w-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center">
+            <div class="h-10 w-10 rounded-xl bg-red-600 text-white flex items-center justify-center">
                 <i class="ri-flashlight-line"></i>
-            </div>
-            <div>
-                <div class="font-bold">OnePro</div>
-                <div class="text-xs text-slate-400">Internal Portal</div>
             </div>
         </div>
     </div>
@@ -181,25 +152,26 @@
             Dashboard
         </a>
 
-        <!-- RIC DROPDOWN -->
-        <div>
-            <button onclick="toggleRicMenu()"
-                    class="nav-group-btn @(isRicGroup ? "open":"")">
-                <span class="flex items-center gap-2">
-                    <i class="ri-file-list-3-line"></i> RIC
-                </span>
-                <i id="ricChevron" class="ri-arrow-down-s-line chev @(isRicGroup?"rotate":"")"></i>
-            </button>
+        <!-- RIC (tanpa dropdown) -->
+        <a href="/Ric/Dashboard" class="nav-item @(isRicGroup ? "active":"")">
+            <i class="ri-file-list-3-line"></i>
+            RIC
+        </a>
 
-            <div id="ricCollapse" class="collapse @(isRicGroup?"open":"")">
-                <a href="/Ric/Dashboard" class="sub-item @(isRicDashboard?"active":"")">
-                    <i class="ri-bar-chart-line"></i> Dashboard RIC
-                </a>
-                <a href="/Ric/Approval" class="sub-item @(isRicApproval?"active":"")">
-                    <i class="ri-check-double-line"></i> Approval
-                </a>
-            </div>
-        </div>
+        @if (userRole == "0" || userRole == "1" || userRole == "2" || userRole == "3") {
+            <a href="/Ric/User" class="sub-item @(isRicDashboard ? "active":"")">
+            <i class="ri-bar-chart-line"></i> Dashboard RIC
+        </a>
+        }else {
+            <a href="/Ric/Review" class="sub-item @(isRicDashboard ? "active":"")">
+            <i class="ri-bar-chart-line"></i> Dashboard RIC
+        </a>
+        }
+        
+
+        <a href="/Ric/Approval" class="sub-item @(isRicApproval ? "active":"")">
+            <i class="ri-check-double-line"></i> Approval
+        </a>
 
         <a href="/User" class="nav-item @(isUser?"active":"")">
             <i class="ri-group-line"></i> User Management
@@ -211,7 +183,7 @@
 
         <form method="post" action="@Url.Action("Logout","Auth")" class="pt-4 border-t">
             @Html.AntiForgeryToken()
-            <button class="nav-item text-rose-600 w-full text-left hover:bg-rose-50">
+            <button class="nav-item text-red-600 w-full text-left hover:bg-red-50">
                 <i class="ri-logout-box-line"></i> Logout
             </button>
         </form>
@@ -222,26 +194,19 @@
      onclick="toggleSidebar()"
      class="fixed inset-0 bg-black/30 z-30 hidden lg:hidden"></div>
 
-<!-- MAIN -->
-<main class="lg:ml-60 p-4">
+<!-- MAIN (ikut sidebar kecil) -->
+<main class="lg:ml-56 p-4">
     @RenderBody()
 </main>
 
-    @RenderSection("Scripts", required: false)
-
+@RenderSection("Scripts", required: false)
 
 <script>
-    function toggleSidebar() {
+    function toggleSidebar(){
         sidebar.classList.toggle("-translate-x-full");
         sidebarOverlay.classList.toggle("hidden");
     }
-
-    function toggleRicMenu() {
-        ricCollapse.classList.toggle("open");
-        ricChevron.classList.toggle("rotate");
-    }
-
-    function toggleProfileMenu() {
+    function toggleProfileMenu(){
         profileMenu.classList.toggle("hidden");
         caretIcon.classList.toggle("rotate");
     }

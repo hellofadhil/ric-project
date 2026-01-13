@@ -9,6 +9,12 @@ namespace OnePro.Front.Controllers
     {
         public IActionResult Index()
         {
+            // if (!TryGetToken(out var token))
+            //     return RedirectToLogin();
+                
+            var userRole = HttpContext.Session.GetString("UserRole");
+            ViewBag.UserRole = userRole;
+
             return View("Index");
         }
     }

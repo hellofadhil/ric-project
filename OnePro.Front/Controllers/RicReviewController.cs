@@ -32,7 +32,7 @@ namespace OnePro.Front.Controllers.Ric
             if (!TryGetToken(out var token)) return RedirectToLogin();
 
             var userRole = HttpContext.Session.GetString("UserRole");
-            Logger.LogInformation("ReviewIndex accessed. UserRole from session: {UserRole}", userRole);
+            // Logger.LogInformation("ReviewIndex accessed. UserRole from session: {UserRole}", userRole);
 
             ViewBag.UserRole = userRole;
 

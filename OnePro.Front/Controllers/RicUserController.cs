@@ -36,6 +36,7 @@ namespace OnePro.Front.Controllers.Ric
         {
             if (!TryGetToken(out var token))
                 return RedirectToLogin();
+
             var rics = await RicService.GetMyRicsAsync(token);
             return View(ViewUserIndex, rics);
         }
