@@ -1,6 +1,6 @@
 {
   "Version": 1,
-  "Hash": "/786D0/uHq6i3JjcwKFeOknYTTV3svbrMiBT6GC30G4=",
+  "Hash": "U7qCv7bhbOfRpMpgSpdf7NSXNXh5AgvDJgdf4xC64LI=",
   "Source": "OnePro.Front",
   "BasePath": "_content/OnePro.Front",
   "Mode": "Default",
@@ -1611,6 +1611,44 @@
       "CopyToOutputDirectory": "Never",
       "CopyToPublishDirectory": "PreserveNewest",
       "OriginalItemSpec": "wwwroot\\uploads\\ric\\20260113_133234_d5aa6d6b.png"
+    },
+    {
+      "Identity": "C:\\Users\\gaske\\Videos\\PertaminaV2\\OnePro.Front\\wwwroot\\uploads\\ric\\20260113_160915_3046780f.png",
+      "SourceId": "OnePro.Front",
+      "SourceType": "Discovered",
+      "ContentRoot": "C:\\Users\\gaske\\Videos\\PertaminaV2\\OnePro.Front\\wwwroot\\",
+      "BasePath": "_content/OnePro.Front",
+      "RelativePath": "uploads/ric/20260113_160915_3046780f.png",
+      "AssetKind": "All",
+      "AssetMode": "All",
+      "AssetRole": "Primary",
+      "AssetMergeBehavior": "PreferTarget",
+      "AssetMergeSource": "",
+      "RelatedAsset": "",
+      "AssetTraitName": "",
+      "AssetTraitValue": "",
+      "CopyToOutputDirectory": "Never",
+      "CopyToPublishDirectory": "PreserveNewest",
+      "OriginalItemSpec": "wwwroot\\uploads\\ric\\20260113_160915_3046780f.png"
+    },
+    {
+      "Identity": "C:\\Users\\gaske\\Videos\\PertaminaV2\\OnePro.Front\\wwwroot\\uploads\\ric\\20260113_160915_ffeb9755.png",
+      "SourceId": "OnePro.Front",
+      "SourceType": "Discovered",
+      "ContentRoot": "C:\\Users\\gaske\\Videos\\PertaminaV2\\OnePro.Front\\wwwroot\\",
+      "BasePath": "_content/OnePro.Front",
+      "RelativePath": "uploads/ric/20260113_160915_ffeb9755.png",
+      "AssetKind": "All",
+      "AssetMode": "All",
+      "AssetRole": "Primary",
+      "AssetMergeBehavior": "PreferTarget",
+      "AssetMergeSource": "",
+      "RelatedAsset": "",
+      "AssetTraitName": "",
+      "AssetTraitValue": "",
+      "CopyToOutputDirectory": "Never",
+      "CopyToPublishDirectory": "PreserveNewest",
+      "OriginalItemSpec": "wwwroot\\uploads\\ric\\20260113_160915_ffeb9755.png"
     }
   ]
 }

@@ -333,6 +333,14 @@
       "PackagePath": "staticwebassets\\uploads\\ric\\20260113_133234_d5aa6d6b.png"
     },
     {
+      "Id": "C:\\Users\\gaske\\Videos\\PertaminaV2\\OnePro.Front\\wwwroot\\uploads\\ric\\20260113_160915_3046780f.png",
+      "PackagePath": "staticwebassets\\uploads\\ric\\20260113_160915_3046780f.png"
+    },
+    {
+      "Id": "C:\\Users\\gaske\\Videos\\PertaminaV2\\OnePro.Front\\wwwroot\\uploads\\ric\\20260113_160915_ffeb9755.png",
+      "PackagePath": "staticwebassets\\uploads\\ric\\20260113_160915_ffeb9755.png"
+    },
+    {
       "Id": "obj\\Debug\\net8.0\\staticwebassets\\msbuild.OnePro.Front.Microsoft.AspNetCore.StaticWebAssets.props",
       "PackagePath": "build\\Microsoft.AspNetCore.StaticWebAssets.props"
     },
