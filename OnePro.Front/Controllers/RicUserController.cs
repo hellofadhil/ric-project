@@ -20,6 +20,9 @@ namespace OnePro.Front.Controllers.Ric
         private const string ViewUserEdit = "~/Views/Ric/User/Edit.cshtml";
         private const string ViewUserUpdate = "~/Views/Ric/User/Update.cshtml";
 
+        private const string ViewUserApprovalIndex = "~/Views/Ric/Approval/Index.cshtml";
+        private const string ViewUserApprovalDetail = "~/Views/Ric/Approval/Detail.cshtml";
+
         public RicUserController(
             IRicService ricService,
             ILogger<RicUserController> logger,
@@ -191,6 +194,65 @@ namespace OnePro.Front.Controllers.Ric
                 ModelState.AddModelError(string.Empty, "Terjadi kesalahan saat resubmit RIC.");
                 return View(ViewUserUpdate, model);
             }
+        }
+
+        [RoleRequired(Role.User_Manager, Role.User_VP)]
+        [HttpGet("Ric/User/Approval")]
+        public async Task<IActionResult> ApprovalIndex()
+        {
+            if (!TryGetToken(out var token))
+                return RedirectToLogin();
+
+            // reuse list my rics, nanti difilter di view (atau bisa filter di controller)
+            var rics = await RicService.GetMyRicsAsync(token);
+
+            // tampilkan yang lagi approval (pipeline user)
+            var approvalRics = rics.Where(x =>
+                    x.Status == StatusRic.Approval_Manager_User.ToString()
+                    || x.Status == StatusRic.Approval_VP_User.ToString()
+                    || x.Status == StatusRic.Approval_Manager_BR.ToString()
+                    || x.Status == StatusRic.Approval_Manager_SARM.ToString()
+                    || x.Status == StatusRic.Approval_VP_SARM.ToString()
+                    || x.Status == StatusRic.Approval_Manager_ECS.ToString()
+                    || x.Status == StatusRic.Approval_VP_ECS.ToString()
+                )
+                .ToList();
+
+            return View(ViewUserApprovalIndex, approvalRics);
+        }
+
+        [RoleRequired(Role.User_Manager, Role.User_VP)]
+        [HttpGet("Ric/User/Approval/{id:guid}")]
+        public async Task<IActionResult> Approval(Guid id)
+        {
+            if (!TryGetToken(out var token))
+                return RedirectToLogin();
+
+            var ric = await RicService.GetRicByIdAsync(id, token);
+            if (ric == null)
+                return NotFound();
+
+            return View(ViewUserApprovalDetail, ric);
+        }
+
+        [RoleRequired(Role.User_Manager, Role.User_VP)]
+        [HttpPost("Ric/User/Approval/{id:guid}/approve")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ApproveAction(Guid id)
+        {
+            if (!TryGetToken(out var token))
+                return RedirectToLogin();
+
+            var ok = await RicService.ApproveAsync(id, token);
+            if (!ok)
+            {
+                TempData["ErrorMessage"] =
+                    "Gagal approve RIC. Cek status/role atau pending approval belum ada.";
+                return RedirectToAction(nameof(Approval), new { id });
+            }
+
+            TempData["SuccessMessage"] = "RIC berhasil di-approve ✅";
+            return RedirectToAction(nameof(Approval), new { id });
         }
     }
 }

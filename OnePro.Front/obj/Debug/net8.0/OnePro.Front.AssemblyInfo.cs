@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("OnePro.Front")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+abc87ff264e4b0a681419c668756a952eeeb3a63")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+0f781acc6e9e5989bd16c81acca6d928deed3e66")]
 [assembly: System.Reflection.AssemblyProductAttribute("OnePro.Front")]
 [assembly: System.Reflection.AssemblyTitleAttribute("OnePro.Front")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

@@ -205,6 +205,31 @@ namespace OnePro.Front.Services.Implement
             return response.IsSuccessful;
         }
 
+        public async Task<bool> ApproveAsync(Guid id, string token)
+        {
+            var apiUrl = $"{_config["ApiUrl"]}/api/v1/Ric/{id}/approve";
+            var client = new RestClient(apiUrl);
+            var request = new RestRequest("", Method.Put);
+
+            request.AddHeader("Authorization", $"Bearer {token}");
+            request.AddHeader("Content-Type", "application/json");
+
+            // backend lu ga butuh body, tapi kadang aman kirim {} biar ga rewel
+            request.AddJsonBody(new { });
+
+            var response = await client.ExecuteAsync(request);
+
+            _logger.LogInformation(
+                "APPROVE API RESP | RicId={RicId} | Code={Code} | Success={Success} | Body={Body}",
+                id,
+                (int)response.StatusCode,
+                response.IsSuccessful,
+                response.Content
+            );
+
+            return response.IsSuccessful;
+        }
+
         // public async Task<bool> ForwardAsync(Guid id, FormRicResubmitRequest data, string token)
         // {
         //     var apiUrl = $"{_config["ApiUrl"]}/api/v1/Ric/{id}/forward";

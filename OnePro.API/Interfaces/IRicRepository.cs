@@ -1,4 +1,5 @@
 using Core.Models.Entities;
+using Core.Models.Enums;
 
 namespace OnePro.API.Interfaces
 {
@@ -17,5 +18,8 @@ namespace OnePro.API.Interfaces
 
         Task AddHistoryAsync(FormRicHistory history);
         Task AddReviewAsync(ReviewFormRic review);
+        Task<bool> EnsureApprovalsCreatedAsync(Guid ricId);
+
+        Task<bool> MarkApprovalApprovedAsync(Guid ricId, RoleApproval role, Guid approverId);
     }
 }

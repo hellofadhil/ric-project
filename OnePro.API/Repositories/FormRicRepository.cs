@@ -409,5 +409,53 @@ namespace OnePro.API.Repositories
 
             return JsonSerializer.Serialize(changes, options);
         }
+
+        public async Task<bool> EnsureApprovalsCreatedAsync(Guid ricId)
+        {
+            // idempotent: kalau sudah ada record approval untuk ric ini, skip
+            var exists = await _context.FormRicApprovals!.AnyAsync(a => a.IdFormRic == ricId);
+
+            if (exists)
+                return true;
+
+            var now = DateTime.UtcNow;
+
+            var approvals = Enum.GetValues(typeof(RoleApproval))
+                .Cast<RoleApproval>()
+                .Select(r => new FormRicApproval
+                {
+                    Id = Guid.NewGuid(),
+                    IdFormRic = ricId,
+                    IdApprover = Guid.Empty, // belum di-assign
+                    Role = r,
+                    ApprovalStatus = ApprovalStatus.Pending, // default Pending
+                    ApprovalDate = null,
+                    CreatedAt = now,
+                })
+                .ToList();
+
+            await _context.FormRicApprovals!.AddRangeAsync(approvals);
+            return await _context.SaveChangesAsync() > 0;
+        }
+
+        public async Task<bool> MarkApprovalApprovedAsync(
+            Guid ricId,
+            RoleApproval role,
+            Guid approverId
+        )
+        {
+            var pending = await _context.FormRicApprovals!.FirstOrDefaultAsync(a =>
+                a.IdFormRic == ricId && a.Role == role && a.ApprovalStatus == ApprovalStatus.Pending
+            );
+
+            if (pending is null)
+                return false;
+
+            pending.IdApprover = approverId;
+            pending.ApprovalStatus = ApprovalStatus.Approved;
+            pending.ApprovalDate = DateTime.UtcNow;
+
+            return await _context.SaveChangesAsync() > 0;
+        }
     }
 }

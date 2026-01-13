@@ -6,224 +6,246 @@
     var initials = name.Length > 1
         ? $"{char.ToUpper(name[0])}{char.ToUpper(name[1])}"
         : $"{char.ToUpper(name[0])}";
+
+    var path = Context.Request.Path.Value?.ToLower() ?? "";
+
+    bool isDashboard = path == "/dashboard";
+
+    bool isRicDashboard = path == "/ric" || path.StartsWith("/ric/dashboard");
+    bool isRicApproval = path.StartsWith("/ric/approval");
+    bool isRicGroup = path.StartsWith("/ric");
+
+    bool isUser = path.StartsWith("/user");
+    bool isSettings = path.StartsWith("/settings");
 }
+
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - App</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@ViewData["Title"] - OnePro</title>
 
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdn.jsdelivr.net/npm/remixicon/fonts/remixicon.css" rel="stylesheet">
 
     <style>
         .nav-item {
-            display: flex;
-            align-items: center;
-            gap: .5rem;
-            padding: .5rem .75rem;
-            border-radius: .5rem;
-            font-size: .875rem;
+            display:flex; align-items:center; gap:.6rem;
+            padding:.55rem .75rem;
+            border-radius:.75rem;
+            font-size:.875rem;
             color: rgb(71 85 105);
-            transition: .15s;
+            transition:.15s;
         }
         .nav-item:hover {
             background: rgb(248 250 252);
             color: rgb(15 23 42);
         }
         .nav-item.active {
-            background: rgb(254 242 242);
-            color: rgb(220 38 38);
-            font-weight: 600;
+            background: rgba(99,102,241,.10);
+            color: rgb(79 70 229);
+            font-weight:600;
+            position:relative;
+        }
+        .nav-item.active::before {
+            content:"";
+            position:absolute;
+            left:-8px;
+            top:10px;
+            width:4px;
+            height:22px;
+            border-radius:999px;
+            background: rgb(79 70 229);
         }
 
-        .profile-menu {
-            width: 13rem;
-            border-radius: 0.75rem;
-            border: 1px solid rgb(226 232 240);
-            background: white;
-            box-shadow: 0 10px 15px -3px rgb(0 0 0 / .1);
-            padding: .5rem 0;
-        }
-        .profile-menu-item {
-            display: flex;
-            align-items: center;
-            gap: .5rem;
-            font-size: .875rem;
-            padding: .5rem 1rem;
+        .nav-group-btn {
+            width:100%;
+            display:flex;
+            align-items:center;
+            justify-content:space-between;
+            padding:.55rem .75rem;
+            border-radius:.75rem;
+            font-size:.875rem;
             color: rgb(71 85 105);
-            transition: .15s;
+            transition:.15s;
         }
-        .profile-menu-item:hover {
+        .nav-group-btn:hover {
             background: rgb(248 250 252);
             color: rgb(15 23 42);
         }
-        .profile-menu-separator {
-            height: 1px;
-            background: rgb(226 232 240);
-            margin: .5rem 0;
+        .nav-group-btn.open {
+            background: rgba(99,102,241,.10);
+            color: rgb(79 70 229);
+            font-weight:600;
         }
-        .profile-menu-danger {
-            color: rgb(225 29 72);
-            font-weight: 500;
+
+        .sub-item {
+            display:flex;
+            align-items:center;
+            gap:.5rem;
+            padding:.5rem .75rem .5rem 2.25rem;
+            border-radius:.75rem;
+            font-size:.85rem;
+            color: rgb(100 116 139);
+            transition:.15s;
         }
-        .profile-menu-danger:hover {
-            background: rgb(255 241 242);
+        .sub-item:hover {
+            background: rgb(248 250 252);
+            color: rgb(15 23 42);
         }
-        .rotate-180 {
-            transform: rotate(180deg);
+        .sub-item.active {
+            background: rgba(99,102,241,.10);
+            color: rgb(79 70 229);
+            font-weight:600;
+        }
+
+        .collapse {
+            max-height:0;
+            overflow:hidden;
+            transition:max-height .25s ease;
+        }
+        .collapse.open {
+            max-height:300px;
+        }
+        .chev {
+            transition:transform .2s ease;
+        }
+        .rotate {
+            transform:rotate(180deg);
         }
     </style>
 </head>
 
 <body class="bg-slate-50">
 
-    <!-- HEADER -->
-    <header class="sticky top-0 z-50 bg-white border-b shadow-sm flex items-center justify-between px-4 h-14">
+<!-- HEADER -->
+<header class="sticky top-0 z-50 h-14 bg-white border-b flex items-center justify-between px-4">
+    <div class="flex items-center gap-3">
+        <button onclick="toggleSidebar()" class="lg:hidden text-xl">
+            <i class="ri-menu-line"></i>
+        </button>
 
-        <!-- LEFT -->
-        <div class="h-16 flex items-center  border-b border-slate-200">
-    <img src="https://akiradata.co.id/wp-content/uploads/2020/05/logo-pertamina.png"
-         alt="Pertamina Logo"
-         class="h-12 w-auto object-contain" />
-</div>
+        <img src="https://akiradata.co.id/wp-content/uploads/2020/05/logo-pertamina.png"
+             class="h-10 w-auto" />
+    </div>
 
+    <div class="relative">
+        <button onclick="toggleProfileMenu()" class="flex items-center gap-2 bg-slate-100 px-2 py-1 rounded-full">
+            <div class="h-9 w-9 rounded-full bg-slate-800 text-white text-sm font-semibold flex items-center justify-center">
+                @initials
+            </div>
+            <i id="caretIcon" class="ri-arrow-down-s-line transition"></i>
+        </button>
 
-        <!-- RIGHT PROFILE -->
-        <div class="relative">
-            <button onclick="toggleProfileMenu()" class="flex items-center gap-2 bg-slate-100 px-2 py-1 rounded-full hover:bg-slate-200">
-                <div class="h-9 w-9 rounded-full bg-slate-800 text-white text-sm font-semibold flex items-center justify-center">
-                    @initials
-                </div>
-                <i id="caretIcon" class="ri-arrow-down-s-line text-slate-500 transition-transform"></i>
-            </button>
+        <div id="profileMenu" class="hidden absolute right-0 mt-2 w-52 bg-white border rounded-xl shadow-lg">
+            <div class="px-4 py-3 border-b">
+                <div class="font-semibold">@name</div>
+                <div class="text-xs text-slate-400">@email</div>
+            </div>
 
-            <div id="profileMenu" class="hidden absolute right-0 mt-2 z-50">
-                <div class="profile-menu">
+            <a href="/Profile" class="block px-4 py-2 text-sm hover:bg-slate-100">My Profile</a>
+            <a href="/Settings" class="block px-4 py-2 text-sm hover:bg-slate-100">Settings</a>
 
-                    <div class="px-4 py-2 border-b">
-                        <div class="font-semibold">@name</div>
-                        <div class="text-xs text-slate-400">@email</div>
-                    </div>
+            <form method="post" action="@Url.Action("Logout","Auth")">
+                @Html.AntiForgeryToken()
+                <button class="w-full text-left px-4 py-2 text-sm text-rose-600 hover:bg-rose-50">
+                    Logout
+                </button>
+            </form>
+        </div>
+    </div>
+</header>
 
-                    <a href="/Profile" class="profile-menu-item">
-                        👤 My Profile
-                    </a>
+<!-- SIDEBAR -->
+<aside id="sidebar"
+       class="fixed inset-y-0 left-0 z-40 w-100 bg-white border-r shadow-sm
+              transform -translate-x-full lg:translate-x-0 transition">
 
-                    <a href="/Settings" class="profile-menu-item">
-                        ⚙ Settings
-                    </a>
-
-                    <div class="profile-menu-separator"></div>
-
-                    <form method="post" action="@Url.Action("Logout", "Auth")">
-                        @Html.AntiForgeryToken()
-                        <button class="profile-menu-item profile-menu-danger w-full text-left">
-                            ⎋ Logout
-                        </button>
-                    </form>
-
-                </div>
+    <div class="p-4 border-b">
+        <div class="flex items-center gap-3">
+            <div class="h-10 w-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center">
+                <i class="ri-flashlight-line"></i>
+            </div>
+            <div>
+                <div class="font-bold">OnePro</div>
+                <div class="text-xs text-slate-400">Internal Portal</div>
             </div>
         </div>
-    </header>
+    </div>
 
-    <!-- SIDEBAR -->
-    <aside id="sidebar"
-           class="fixed inset-y-0 left-0 z-40 w-52 bg-white border-r border-slate-200 shadow-sm
-                  transform -translate-x-full lg:translate-x-0
-                  transition-transform duration-300 ease-in-out">
+    <nav class="px-3 py-4 space-y-2">
 
-        <div class="p-4 font-bold text-lg border-b">Logo</div>
+        <a href="/Dashboard" class="nav-item @(isDashboard ? "active":"")">
+            <i class="ri-dashboard-line"></i>
+            Dashboard
+        </a>
 
-        <nav class="px-3 py-4 space-y-1 text-sm">
+        <!-- RIC DROPDOWN -->
+        <div>
+            <button onclick="toggleRicMenu()"
+                    class="nav-group-btn @(isRicGroup ? "open":"")">
+                <span class="flex items-center gap-2">
+                    <i class="ri-file-list-3-line"></i> RIC
+                </span>
+                <i id="ricChevron" class="ri-arrow-down-s-line chev @(isRicGroup?"rotate":"")"></i>
+            </button>
 
-            <p class="px-3 text-[11px] font-semibold tracking-[0.16em] text-slate-400 uppercase mb-1">
-                Main
-            </p>
-
-            <a href="/Dashboard"
-               class="nav-item @(Context.Request.Path == "/Dashboard" ? "active" : "")">
-                <i class="ri-dashboard-line"></i>
-                <span>Dashboard</span>
-            </a>
-
-            <a href="/Ric"
-               class="nav-item @(Context.Request.Path == "/Ric" ? "active" : "")">
-                <i class="ri-file-list-3-line"></i>
-                <span>RIC System</span>
-            </a>
-
-            <a href="/User"
-               class="nav-item @(Context.Request.Path == "/User" ? "active" : "")">
-                <i class="ri-group-line"></i>
-                <span>User Management</span>
-            </a>
-
-            <a href="/Settings"
-               class="nav-item @(Context.Request.Path == "/Settings" ? "active" : "")">
-                <i class="ri-settings-3-line"></i>
-                <span>Settings</span>
-            </a>
-
-            <div class="pt-4 mt-4 border-t">
-                <form method="post" action="@Url.Action("Logout", "Auth")">
-                    @Html.AntiForgeryToken()
-                    <button class="nav-item text-rose-600 hover:bg-rose-50 w-full text-left">
-                        <i class="ri-logout-box-line"></i>
-                        <span>Logout</span>
-                    </button>
-                </form>
+            <div id="ricCollapse" class="collapse @(isRicGroup?"open":"")">
+                <a href="/Ric/Dashboard" class="sub-item @(isRicDashboard?"active":"")">
+                    <i class="ri-bar-chart-line"></i> Dashboard RIC
+                </a>
+                <a href="/Ric/Approval" class="sub-item @(isRicApproval?"active":"")">
+                    <i class="ri-check-double-line"></i> Approval
+                </a>
             </div>
+        </div>
 
-        </nav>
-    </aside>
+        <a href="/User" class="nav-item @(isUser?"active":"")">
+            <i class="ri-group-line"></i> User Management
+        </a>
 
-    <!-- OVERLAY (MOBILE) -->
-    <div id="sidebarOverlay"
-         onclick="toggleSidebar()"
-         class="fixed inset-0 z-30 bg-black/30 opacity-0 pointer-events-none lg:hidden transition-opacity duration-300"></div>
+        <a href="/Settings" class="nav-item @(isSettings?"active":"")">
+            <i class="ri-settings-3-line"></i> Settings
+        </a>
 
-    <!-- MAIN -->
-<main class="lg:ml-52 px-2 sm:px-4 lg:px-6 py-4">
-        @RenderBody()
-    </main>
+        <form method="post" action="@Url.Action("Logout","Auth")" class="pt-4 border-t">
+            @Html.AntiForgeryToken()
+            <button class="nav-item text-rose-600 w-full text-left hover:bg-rose-50">
+                <i class="ri-logout-box-line"></i> Logout
+            </button>
+        </form>
+    </nav>
+</aside>
+
+<div id="sidebarOverlay"
+     onclick="toggleSidebar()"
+     class="fixed inset-0 bg-black/30 z-30 hidden lg:hidden"></div>
+
+<!-- MAIN -->
+<main class="lg:ml-60 p-4">
+    @RenderBody()
+</main>
 
     @RenderSection("Scripts", required: false)
 
-    <script>
-        function toggleSidebar() {
-            const sidebar = document.getElementById("sidebar");
-            const overlay = document.getElementById("sidebarOverlay");
-            const hidden = sidebar.classList.contains("-translate-x-full");
 
-            sidebar.classList.toggle("-translate-x-full", !hidden);
+<script>
+    function toggleSidebar() {
+        sidebar.classList.toggle("-translate-x-full");
+        sidebarOverlay.classList.toggle("hidden");
+    }
 
-            overlay.classList.toggle("opacity-0", !hidden);
-            overlay.classList.toggle("pointer-events-none", !hidden);
+    function toggleRicMenu() {
+        ricCollapse.classList.toggle("open");
+        ricChevron.classList.toggle("rotate");
+    }
 
-            overlay.classList.toggle("opacity-100", hidden);
-        }
-
-        function toggleProfileMenu() {
-            const menu = document.getElementById("profileMenu");
-            const icon = document.getElementById("caretIcon");
-
-            menu.classList.toggle("hidden");
-            icon.classList.toggle("rotate-180");
-        }
-
-        window.addEventListener("click", function (e) {
-            const menu = document.getElementById("profileMenu");
-            if (!e.target.closest("#profileMenu") && !e.target.closest("button")) {
-                if (!menu.classList.contains("hidden")) {
-                    menu.classList.add("hidden");
-                    document.getElementById("caretIcon").classList.remove("rotate-180");
-                }
-            }
-        });
-    </script>
+    function toggleProfileMenu() {
+        profileMenu.classList.toggle("hidden");
+        caretIcon.classList.toggle("rotate");
+    }
+</script>
 
 </body>
 </html>
