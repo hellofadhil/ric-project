@@ -23,7 +23,7 @@ dotnet ef database update --startup-project ../OnePro.API
 
 sqlcmd -S (localdb)\MSSQLLocalDB -Q "DROP DATABASE DatabaseRic"
 
-sqlcmd -S (localdb)\MSSQLLocalDB -d DatabaseRic -Q "SELECT TOP 20 * FROM FormRics"
+sqlcmd -S (localdb)\MSSQLLocalDB -d DatabaseRic -Q "SELECT TOP 10 AsIsProcessRasciFile FROM FormRics"
 
 sqlcmd -S (localdb)\MSSQLLocalDB -d DatabaseRic -Q "SELECT * FROM FormRicHistory"
 

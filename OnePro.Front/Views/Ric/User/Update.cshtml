@@ -1,4 +1,5 @@
 @using System.Text.Encodings.Web
+@using System.Linq
 
 @model OnePro.Front.Models.RicCreateViewModel
 @{
@@ -7,19 +8,22 @@
 }
 
 <div class="min-h-screen bg-slate-50">
-    <div class="max-w-6xl mx-auto px-2 sm:px-6 py-4">
+    <div class="max-w-7xl mx-auto px-2 sm:px-2 py-4">
 
         <form asp-controller="RicUser"
-      asp-action="Update"
-      asp-route-id="@Model.Id"
-      method="post"
-      enctype="multipart/form-data">
-
+              asp-action="Update"
+              asp-route-id="@Model.Id"
+              method="post"
+              enctype="multipart/form-data">
 
             @Html.AntiForgeryToken()
 
-            <!-- Judul Permintaan -->
-            <div class="mb-4 rounded-xl bg-white shadow-sm border border-slate-100">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+                <!-- MAIN CONTENT -->
+                <div class="lg:col-span-8 space-y-4">
+
+                   <div class="mb-4 rounded-xl bg-white shadow-sm border border-slate-100">
                 <div class="px-6 py-4 border-b border-slate-100">
                     <h2 class="text-sm font-semibold text-slate-800">
                         Judul Permintaan
@@ -347,157 +351,47 @@
 
             <!-- Hasil Setelah Perbaikan (opsional, bisa diisi belakangan) -->
             <div class="mb-4 rounded-xl bg-white shadow-sm border border-slate-100">
-    <div class="px-6 py-4 border-b border-slate-100">
-        <h2 class="text-sm font-semibold text-slate-800">
-            Hasil Setelah Perbaikan
-        </h2>
-        <p class="mt-1 text-xs text-slate-500">
-            Bisa diupdate setelah implementasi. Untuk sekarang boleh dikosongin kalau belum ada hasil.
-        </p>
-    </div>
-    <div class="px-6 py-4">
-        <textarea asp-for="HasilSetelahPerbaikan"
-                  rows="3"
-                  class="block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-indigo-500 focus:ring-indigo-500"></textarea>
-        <span asp-validation-for="HasilSetelahPerbaikan" class="text-xs text-red-500"></span>
-    </div>
-</div>
+                <div class="px-6 py-4 border-b border-slate-100">
+                    <h2 class="text-sm font-semibold text-slate-800">
+                        Hasil Setelah Perbaikan
+                    </h2>
+                    <p class="mt-1 text-xs text-slate-500">
+                        Bisa diupdate setelah implementasi. Untuk sekarang boleh dikosongin kalau belum ada hasil.
+                    </p>
+                </div>
+                <div class="px-6 py-4">
+                    <textarea asp-for="HasilSetelahPerbaikan"
+                        rows="3"
+                        class="block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-indigo-500 focus:ring-indigo-500"></textarea>
+                    <span asp-validation-for="HasilSetelahPerbaikan" class="text-xs text-red-500"></span>
+                </div>
+            </div>
 
+            @* <div class="flex flex-col gap-4 border-t border-slate-100 bg-white px-8 py-4 sm:flex-row sm:items-center sm:justify-between">
 
-<!-- Reviews -->
-<div class="mb-4 rounded-xl bg-white shadow-sm border border-slate-100">
-    <div class="px-6 py-4 border-b border-slate-100">
-        <h2 class="text-sm font-semibold text-slate-800">Reviews</h2>
-        <p class="mt-1 text-xs text-slate-500">Catatan reviewer untuk RIC ini.</p>
-    </div>
+                    <button type="reset"
+                        class="inline-flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-slate-700">
+                        <span class="inline-flex h-6 w-6 items-center justify-center rounded-full border border-slate-300 text-[11px]">
+                            ↺
+                        </span>
+                        Reset
+                    </button>
 
-    <div class="px-6 py-4">
-        @if (Model.Reviews != null && Model.Reviews.Any())
-        {
-            <div class="space-y-3">
-                @foreach (var rv in Model.Reviews.OrderByDescending(x => x.CreatedAt))
-                {
-                    <div class="rounded-lg border border-slate-200 bg-slate-50 p-4">
-                        <div class="flex items-start justify-between gap-3">
-                            <div class="min-w-0">
-                                <div class="flex flex-wrap items-center gap-2">
-                                    <span class="text-sm font-semibold text-slate-800">
-                                        @(string.IsNullOrWhiteSpace(rv.UserName) ? "Reviewer" : rv.UserName)
-                                    </span>
-                                    <span class="inline-flex items-center rounded-full bg-indigo-50 px-2 py-0.5 text-[11px] font-medium text-indigo-700 border border-indigo-100">
-                                        @rv.RoleReview
-                                    </span>
-                                </div>
+                    <div class="flex items-center gap-3">
+                        <button type="submit" name="action" value="save"
+                            class="inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-5 py-2.5 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-100 transition">
+                            Simpan Draft
+                        </button>
 
-                                <p class="mt-2 whitespace-pre-line text-sm text-slate-700">
-                                    @(string.IsNullOrWhiteSpace(rv.Catatan) ? "-" : rv.Catatan)
-                                </p>
-                            </div>
-
-                            <div class="shrink-0 text-right">
-                                <div class="text-[11px] text-slate-500">
-                                    @rv.CreatedAt.ToString("dd MMM yyyy, HH:mm")
-                                </div>
-                            </div>
-                        </div>
+                        <button type="submit" name="action" value="submit"
+                            class="inline-flex items-center justify-center rounded-lg border border-indigo-600 bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700 transition">
+                            Ajukan RIC
+                        </button>
                     </div>
-                }
-            </div>
-        }
-        else
-        {
-            <div class="rounded-lg border border-dashed border-slate-300 bg-slate-50 p-4 text-sm text-slate-600">
-                Belum ada review untuk RIC ini.
-            </div>
-        }
-    </div>
-</div>
+                </div> *@
 
 
-<div class="mb-4 rounded-xl bg-white shadow-sm border border-slate-100">
-    <div class="px-6 py-4 border-b border-slate-100">
-        <h2 class="text-sm font-semibold text-slate-800">History</h2>
-        <p class="mt-1 text-xs text-slate-500">Riwayat perubahan (snapshot) RIC.</p>
-    </div>
-
-    <div class="px-6 py-4">
-        @if (Model.Histories != null && Model.Histories.Any())
-        {
-            <ol class="relative border-s border-slate-200 ms-2 space-y-4">
-                @foreach (var h in Model.Histories.OrderByDescending(x => x.CreatedAt))
-                {
-                    <li class="ms-6">
-                        <span class="absolute -start-[7px] mt-1.5 h-3.5 w-3.5 rounded-full bg-slate-300"></span>
-
-                        <div class="rounded-lg border border-slate-200 bg-white p-4">
-                            <div class="flex items-start justify-between gap-3">
-                                <div class="min-w-0">
-                                    <div class="flex flex-wrap items-center gap-2">
-                                        <span class="text-sm font-semibold text-slate-800">
-                                            Version @h.Version
-                                        </span>
-
-                                        @if (!string.IsNullOrWhiteSpace(h.EditorName))
-                                        {
-                                            <span class="text-xs text-slate-500">
-                                                oleh <span class="font-medium text-slate-700">@h.EditorName</span>
-                                            </span>
-                                        }
-                                    </div>
-
-                                    @if (!string.IsNullOrWhiteSpace(h.EditedFields))
-                                    {
-                                        <div class="mt-2">
-                                            <div class="text-[11px] font-medium text-slate-600">Edited fields</div>
-                                            <div class="mt-1 whitespace-pre-line text-sm text-slate-700">
-                                                @h.EditedFields
-                                            </div>
-                                        </div>
-                                    }
-                                    else
-                                    {
-                                        <div class="mt-2 text-sm text-slate-500">
-                                            Tidak ada info edited fields.
-                                        </div>
-                                    }
-
-                                    @* Expand snapshot *@
-                                    @if (!string.IsNullOrWhiteSpace(h.Snapshot))
-                                    {
-                                        <details class="mt-3 group">
-                                            <summary class="cursor-pointer select-none text-xs font-medium text-indigo-600 hover:text-indigo-700">
-                                                Lihat snapshot JSON
-                                                <span class="ml-1 text-slate-400 group-open:hidden">▼</span>
-                                                <span class="ml-1 text-slate-400 hidden group-open:inline">▲</span>
-                                            </summary>
-
-                                            <pre class="mt-2 max-h-80 overflow-auto rounded-lg border border-slate-200 bg-slate-50 p-3 text-[11px] leading-relaxed text-slate-800 whitespace-pre-wrap break-words">@Html.Raw(HtmlEncoder.Default.Encode(h.Snapshot))</pre>
-                                        </details>
-                                    }
-                                </div>
-
-                                <div class="shrink-0 text-right">
-                                    <div class="text-[11px] text-slate-500">
-                                        @h.CreatedAt.ToString("dd MMM yyyy, HH:mm")
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </li>
-                }
-            </ol>
-        }
-        else
-        {
-            <div class="rounded-lg border border-dashed border-slate-300 bg-slate-50 p-4 text-sm text-slate-600">
-                Belum ada history untuk RIC ini.
-            </div>
-        }
-    </div>
-</div>
-
-            <!-- Footer tombol -->
-            <div class="flex flex-col gap-4 border-t border-slate-100 bg-white px-8 py-4 sm:flex-row sm:items-center sm:justify-between">
+                <div class="flex flex-col gap-4 border-t border-slate-100 bg-white px-8 py-4 sm:flex-row sm:items-center sm:justify-between">
                 <a asp-action="UserIndex"
                    class="inline-flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-slate-700">
                     <span class="inline-flex h-6 w-6 items-center justify-center rounded-full border border-slate-300 text-[11px]">
@@ -517,6 +411,109 @@
                     </button>
                 </div>
             </div>
+                    </div>
+
+        
+
+                @* </div> *@
+
+                <!-- RIGHT SIDEBAR -->
+                <aside class="lg:col-span-4 space-y-4 lg:sticky lg:top-6 h-fit">
+
+                    <!-- Reviews -->
+                    <div class="rounded-xl bg-white shadow-sm border border-slate-100">
+                        <div class="px-6 py-4 border-b border-slate-100">
+                            <h2 class="text-sm font-semibold text-slate-800">Reviews</h2>
+                            <p class="mt-1 text-xs text-slate-500">Catatan reviewer untuk RIC ini.</p>
+                        </div>
+
+                        <div class="px-6 py-4">
+                            @if (Model.Reviews != null && Model.Reviews.Any())
+                            {
+                                <div class="space-y-3">
+                                    @foreach (var rv in Model.Reviews.OrderByDescending(x => x.CreatedAt))
+                                    {
+                                        <div class="rounded-lg border border-slate-200 bg-slate-50 p-4">
+  <div class="flex items-start justify-between gap-3">
+    <div class="min-w-0">
+      <div class="flex flex-wrap items-center gap-2">
+        <span class="text-sm font-semibold text-slate-800">
+          @(string.IsNullOrWhiteSpace(rv.UserName) ? "Reviewer" : rv.UserName)
+        </span>
+
+        <span class="inline-flex items-center rounded-full bg-indigo-50 px-2 py-0.5 text-[11px] font-medium text-indigo-700 border border-indigo-100">
+          @rv.RoleReview
+        </span>
+      </div>
+    </div>
+
+    <div class="shrink-0 text-right text-[11px] text-slate-500">
+      @rv.CreatedAt.ToString("dd MMM yyyy, HH:mm")
+    </div>
+  </div>
+
+  <p class="mt-3 text-sm text-slate-700  w-full">
+    @(string.IsNullOrWhiteSpace(rv.Catatan) ? "-" : rv.Catatan)
+  </p>
+</div>
+
+                                    }
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="rounded-lg border border-dashed border-slate-300 bg-slate-50 p-4 text-sm text-slate-600">
+                                    Belum ada review untuk RIC ini.
+                                </div>
+                            }
+                        </div>
+                    </div>
+
+                    <!-- History (ringkas) -->
+                    <div class="rounded-xl bg-white shadow-sm border border-slate-100">
+                        <div class="px-6 py-4 border-b border-slate-100">
+                            <h2 class="text-sm font-semibold text-slate-800">History</h2>
+                            <p class="mt-1 text-xs text-slate-500">Riwayat perubahan RIC (ringkas).</p>
+                        </div>
+
+                        <div class="px-6 py-4">
+                            @if (Model.Histories != null && Model.Histories.Any())
+                            {
+                                <ul class="space-y-2">
+                                    @foreach (var h in Model.Histories.OrderByDescending(x => x.CreatedAt))
+                                    {
+                                        <li class="rounded-lg border border-slate-200 bg-slate-50 p-3">
+                                            <div class="flex items-start justify-between gap-3">
+                                                <div class="min-w-0">
+                                                    <div class="text-sm font-semibold text-slate-800">
+                                                        Version @h.Version
+                                                    </div>
+                                                    <div class="mt-0.5 text-xs text-slate-600">
+                                                        @(string.IsNullOrWhiteSpace(h.EditorName) ? "Unknown" : h.EditorName)
+                                                    </div>
+                                                </div>
+
+                                                <div class="shrink-0 text-right text-[11px] text-slate-500">
+                                                    @h.CreatedAt.ToString("dd MMM yyyy, HH:mm")
+                                                </div>
+                                            </div>
+                                        </li>
+                                    }
+                                </ul>
+                            }
+                            else
+                            {
+                                <div class="rounded-lg border border-dashed border-slate-300 bg-slate-50 p-4 text-sm text-slate-600">
+                                    Belum ada history untuk RIC ini.
+                                </div>
+                            }
+                        </div>
+                    </div>
+
+                </aside>
+
+            </div> <!-- end grid -->
+
         </form>
 
     </div>
@@ -647,24 +644,21 @@
 
         // Update nama file kalau user pilih file baru
         document.addEventListener("change", function (e) {
-    if (!(e.target instanceof HTMLInputElement)) return;
-    if (e.target.type !== "file") return;
+            if (!(e.target instanceof HTMLInputElement)) return;
+            if (e.target.type !== "file") return;
 
-    const files = e.target.files;
-    if (!files || files.length === 0) return;
+            const files = e.target.files;
+            if (!files || files.length === 0) return;
 
-    const label = e.target.closest("label");
-    if (!label) return;
+            const label = e.target.closest("label");
+            if (!label) return;
 
-    const nameEl = label.querySelector(".file-name");
-    if (!nameEl) return;
+            const nameEl = label.querySelector(".file-name");
+            if (!nameEl) return;
 
-    if (files.length === 1) {
-        nameEl.textContent = files[0].name;
-    } else {
-        nameEl.textContent = files.length + " file dipilih";
-    }
-});
-
+            nameEl.textContent = (files.length === 1)
+                ? files[0].name
+                : files.length + " file dipilih";
+        });
     </script>
 }
