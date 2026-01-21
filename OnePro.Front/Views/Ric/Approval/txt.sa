@@ -322,21 +322,51 @@
                         </a>
 
                         <div class="flex items-center gap-3">
-    <form asp-action="ApproveAction" asp-route-id="@Model.Id" method="post">
-        @Html.AntiForgeryToken()
-        <button type="submit"
-                class="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl
-                       bg-green-600 hover:bg-green-700 text-white text-sm font-semibold transition"
-                onclick="return confirm('Yakin mau approve RIC ini?');">
-            <i class="ri-check-line text-lg"></i>
-            Approve
-        </button>
-    </form>
-</div>
+                            <button type="button"
+                                    id="btn-reject-toggle"
+                                    class="inline-flex items-center justify-center rounded-lg border border-red-500 bg-white px-5 py-2.5 text-sm font-semibold text-red-600 shadow-sm hover:bg-red-50 transition-colors">
+                                Reject
+                            </button>
 
+                            <button type="submit" name="action" value="approve"
+                                    class="inline-flex items-center justify-center rounded-lg border border-emerald-600 bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500/60 focus:ring-offset-1 focus:ring-offset-slate-50 transition-all"
+                                    onclick="return confirm('Yakin mau approve RIC ini?');">
+                                Confirm
+                            </button>
+                        </div>
                     </div>
 
-                    
+                    <!-- PANEL REJECT -->
+                    <div id="reject-panel" class="hidden rounded-xl border border-red-100 bg-red-50 px-8 py-4">
+                        <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                            <div class="flex-1">
+                                <label for="RejectNote" class="block text-xs font-semibold text-red-700 mb-1">
+                                    Catatan Penolakan
+                                </label>
+                                <p class="text-[11px] text-red-600 mb-1">
+                                    Jelaskan kenapa RIC direject dan apa yang harus diperbaiki.
+                                </p>
+                                <textarea id="RejectNote"
+                                          name="Note"
+                                          rows="3"
+                                          class="block w-full rounded-lg border border-red-300 px-3 py-2 text-sm focus:border-red-500 focus:ring-red-500 bg-white"></textarea>
+                            </div>
+
+                            <div class="flex flex-col gap-2 mt-3 sm:mt-0 sm:w-40">
+                                <button type="button"
+                                        id="btn-reject-cancel"
+                                        class="inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-4 py-2 text-xs font-medium text-slate-700 hover:bg-slate-100">
+                                    Cancel
+                                </button>
+                                <button type="submit"
+                                        name="action"
+                                        value="reject"
+                                        class="inline-flex items-center justify-center rounded-lg border border-red-600 bg-red-600 px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-red-700">
+                                    Submit Reject
+                                </button>
+                            </div>
+                        </div>
+                    </div>
 
                 </div>
                 <!-- END MAIN CONTENT -->
@@ -442,3 +472,47 @@
     </div>
 </div>
 
+@section Scripts {
+    <script>
+        // ===== Reject toggle (clean + aman) =====
+        (function () {
+            const toggleBtn = document.getElementById('btn-reject-toggle');
+            const panel = document.getElementById('reject-panel');
+            const cancelBtn = document.getElementById('btn-reject-cancel');
+            const noteInput = document.getElementById('RejectNote');
+            const form = document.querySelector('form');
+
+            if (!toggleBtn || !panel || !form) return;
+
+            toggleBtn.addEventListener('click', () => {
+                panel.classList.remove('hidden');
+                toggleBtn.classList.add('hidden');
+                noteInput?.focus();
+            });
+
+            cancelBtn?.addEventListener('click', () => {
+                panel.classList.add('hidden');
+                toggleBtn.classList.remove('hidden');
+                if (noteInput) noteInput.value = '';
+            });
+
+            // Validasi wajib note untuk reject
+            form.querySelectorAll('button[name="action"]').forEach(btn => {
+                btn.addEventListener('click', function () {
+                    form.dataset.clickedAction = this.value;
+                });
+            });
+
+            form.addEventListener('submit', function (e) {
+                if (form.dataset.clickedAction === 'reject') {
+                    const val = (noteInput?.value || '').trim();
+                    if (!val) {
+                        e.preventDefault();
+                        alert('Catatan penolakan wajib diisi.');
+                        noteInput?.focus();
+                    }
+                }
+            });
+        })();
+    </script>
+}

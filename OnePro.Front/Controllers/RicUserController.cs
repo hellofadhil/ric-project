@@ -232,9 +232,13 @@ namespace OnePro.Front.Controllers.Ric
             var ric = await RicService.GetRicByIdAsync(id, token);
             if (ric == null)
                 return NotFound();
+            
+            var vm = RicMapper.MapToEditViewModel(ric);
 
-            return View(ViewUserApprovalDetail, ric);
+            return View(ViewUserApprovalDetail, vm);
         }
+
+        
 
         [RoleRequired(Role.User_Manager, Role.User_VP)]
         [HttpPost("Ric/User/Approval/{id:guid}/approve")]

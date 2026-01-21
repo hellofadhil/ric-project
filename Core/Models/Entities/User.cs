@@ -14,6 +14,7 @@ namespace Core.Models.Entities
         public string Email { get; set; } = default!;
 
         public Role Role { get; set; }
+        
 
         public string Position { get; set; } = default!;
         public string? TandaTanganFile { get; set; }
