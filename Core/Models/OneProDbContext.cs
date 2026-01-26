@@ -18,6 +18,12 @@ public class OneProDbContext(DbContextOptions<OneProDbContext> options) : DbCont
     public DbSet<FormRicHistory>? FormRicHistories { get; set; }
     public DbSet<UndanganFormRic>? UndanganFormRics { get; set; }
 
+    // region Ric Roll Out
+    public DbSet<FormRicRollOut>? FormRicRollOuts { get; set; }
+    public DbSet<FormRicRollOutApproval>? FormRicRollOutApprovals { get; set; }
+    public DbSet<FormRicRollOutHistory>? FormRicRollOutHistories { get; set; }
+    public DbSet<ReviewFormRicRollOut>? ReviewFormRicRollOuts { get; set; }
+
     // region ViewModels
     public DbSet<GroupResponse>? GroupResponses { get; set; }
     public DbSet<UserResponse>? UserResponses { get; set; }
@@ -60,6 +66,47 @@ public class OneProDbContext(DbContextOptions<OneProDbContext> options) : DbCont
 
         builder.Entity<ReviewFormRic>().Property(p => p.RoleReview).HasConversion<string>();
 
+        #region FORM RIC ROLL OUT
+        builder.Entity<FormRicRollOut>(e =>
+        {
+            // List<string> conversion
+            e.Property(x => x.Hashtag).HasStringListConversion();
+            e.Property(x => x.CompareWithAsIsHoldingProcessFiles).HasStringListConversion();
+            e.Property(x => x.StkAsIsToBeFiles).HasStringListConversion();
+
+            // Enum as string (biar readable)
+            e.Property(x => x.Status).HasConversion<string>();
+
+            // RELATIONSHIP MAPPING (INI YANG NGEFIX ERROR UserId/GroupId)
+            e.HasOne(x => x.User)
+                .WithMany()
+                .HasForeignKey(x => x.IdUser)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            e.HasOne(x => x.Group)
+                .WithMany()
+                .HasForeignKey(x => x.IdGroupUser)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        builder.Entity<FormRicRollOutApproval>(e =>
+        {
+            e.Property(x => x.Role).HasConversion<string>();
+            e.Property(x => x.ApprovalStatus).HasConversion<string>();
+        });
+
+        builder.Entity<FormRicRollOutHistory>(e =>
+        {
+            e.Property(x => x.SnapshotJson).HasColumnType("nvarchar(max)");
+            e.Property(x => x.EditedFieldsJson).HasColumnType("nvarchar(max)");
+        });
+
+        builder.Entity<ReviewFormRicRollOut>(e =>
+        {
+            e.Property(x => x.RoleReview).HasConversion<string>();
+        });
+
+        #endregion
         // ========================================================
         // GROUP SEED
         // ========================================================

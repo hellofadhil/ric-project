@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Core.Migrations
 {
     /// <inheritdoc />
-    public partial class AddNameTable : Migration
+    public partial class addRicRollOut : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -200,6 +200,44 @@ namespace Core.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "FormRicRollOuts",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    IdUser = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    IdGroupUser = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Entitas = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    JudulAplikasi = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Hashtag = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    CompareWithAsIsHoldingProcessFiles = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    StkAsIsToBeFiles = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    IsJoinedDomainAdPertamina = table.Column<bool>(type: "bit", nullable: false),
+                    IsUsingErpPertamina = table.Column<bool>(type: "bit", nullable: false),
+                    IsImplementedRequiredActivation = table.Column<bool>(type: "bit", nullable: false),
+                    HasDataCenterConnection = table.Column<bool>(type: "bit", nullable: false),
+                    HasRequiredResource = table.Column<bool>(type: "bit", nullable: false),
+                    Status = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_FormRicRollOuts", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_FormRicRollOuts_Groups_IdGroupUser",
+                        column: x => x.IdGroupUser,
+                        principalTable: "Groups",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_FormRicRollOuts_Users_IdUser",
+                        column: x => x.IdUser,
+                        principalTable: "Users",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "FormRics",
                 columns: table => new
                 {
@@ -274,6 +312,92 @@ namespace Core.Migrations
                         principalColumn: "Id");
                     table.ForeignKey(
                         name: "FK_UndanganFormRics_Users_UserId",
+                        column: x => x.UserId,
+                        principalTable: "Users",
+                        principalColumn: "Id");
+                });
+
+            migrationBuilder.CreateTable(
+                name: "FormRicRollOutApprovals",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    IdFormRicRollOut = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    IdApprover = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Role = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    ApprovalStatus = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    ApprovalDate = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    FormRicRollOutId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    ApproverId = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_FormRicRollOutApprovals", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_FormRicRollOutApprovals_FormRicRollOuts_FormRicRollOutId",
+                        column: x => x.FormRicRollOutId,
+                        principalTable: "FormRicRollOuts",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_FormRicRollOutApprovals_Users_ApproverId",
+                        column: x => x.ApproverId,
+                        principalTable: "Users",
+                        principalColumn: "Id");
+                });
+
+            migrationBuilder.CreateTable(
+                name: "FormRicRollOutHistories",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    IdFormRicRollOut = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    IdEditor = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Version = table.Column<int>(type: "int", nullable: false),
+                    SnapshotJson = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    EditedFieldsJson = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    EditorId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    FormRicRollOutId = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_FormRicRollOutHistories", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_FormRicRollOutHistories_FormRicRollOuts_FormRicRollOutId",
+                        column: x => x.FormRicRollOutId,
+                        principalTable: "FormRicRollOuts",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_FormRicRollOutHistories_Users_EditorId",
+                        column: x => x.EditorId,
+                        principalTable: "Users",
+                        principalColumn: "Id");
+                });
+
+            migrationBuilder.CreateTable(
+                name: "ReviewFormRicRollOuts",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    IdFormRicRollOut = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    IdUser = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Catatan = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    RoleReview = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    FormRicRollOutId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ReviewFormRicRollOuts", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_ReviewFormRicRollOuts_FormRicRollOuts_FormRicRollOutId",
+                        column: x => x.FormRicRollOutId,
+                        principalTable: "FormRicRollOuts",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_ReviewFormRicRollOuts_Users_UserId",
                         column: x => x.UserId,
                         principalTable: "Users",
                         principalColumn: "Id");
@@ -386,6 +510,36 @@ namespace Core.Migrations
                 column: "EditorId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_FormRicRollOutApprovals_ApproverId",
+                table: "FormRicRollOutApprovals",
+                column: "ApproverId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_FormRicRollOutApprovals_FormRicRollOutId",
+                table: "FormRicRollOutApprovals",
+                column: "FormRicRollOutId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_FormRicRollOutHistories_EditorId",
+                table: "FormRicRollOutHistories",
+                column: "EditorId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_FormRicRollOutHistories_FormRicRollOutId",
+                table: "FormRicRollOutHistories",
+                column: "FormRicRollOutId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_FormRicRollOuts_IdGroupUser",
+                table: "FormRicRollOuts",
+                column: "IdGroupUser");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_FormRicRollOuts_IdUser",
+                table: "FormRicRollOuts",
+                column: "IdUser");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_FormRics_GroupId",
                 table: "FormRics",
                 column: "GroupId");
@@ -393,6 +547,16 @@ namespace Core.Migrations
             migrationBuilder.CreateIndex(
                 name: "IX_FormRics_UserId",
                 table: "FormRics",
+                column: "UserId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ReviewFormRicRollOuts_FormRicRollOutId",
+                table: "ReviewFormRicRollOuts",
+                column: "FormRicRollOutId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ReviewFormRicRollOuts_UserId",
+                table: "ReviewFormRicRollOuts",
                 column: "UserId");
 
             migrationBuilder.CreateIndex(
@@ -445,10 +609,19 @@ namespace Core.Migrations
                 name: "FormRicResponses");
 
             migrationBuilder.DropTable(
+                name: "FormRicRollOutApprovals");
+
+            migrationBuilder.DropTable(
+                name: "FormRicRollOutHistories");
+
+            migrationBuilder.DropTable(
                 name: "GroupResponses");
 
             migrationBuilder.DropTable(
                 name: "ReviewFormRicResponses");
+
+            migrationBuilder.DropTable(
+                name: "ReviewFormRicRollOuts");
 
             migrationBuilder.DropTable(
                 name: "ReviewFormRics");
@@ -461,6 +634,9 @@ namespace Core.Migrations
 
             migrationBuilder.DropTable(
                 name: "UserResponses");
+
+            migrationBuilder.DropTable(
+                name: "FormRicRollOuts");
 
             migrationBuilder.DropTable(
                 name: "FormRics");

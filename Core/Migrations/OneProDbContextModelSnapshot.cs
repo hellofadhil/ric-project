@@ -181,6 +181,150 @@ namespace Core.Migrations
                     b.ToTable("FormRicHistories");
                 });
 
+            modelBuilder.Entity("Core.Models.Entities.FormRicRollOut", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("CompareWithAsIsHoldingProcessFiles")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Entitas")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("HasDataCenterConnection")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("HasRequiredResource")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Hashtag")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("IdGroupUser")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("IdUser")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<bool>("IsImplementedRequiredActivation")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsJoinedDomainAdPertamina")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsUsingErpPertamina")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("JudulAplikasi")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("StkAsIsToBeFiles")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IdGroupUser");
+
+                    b.HasIndex("IdUser");
+
+                    b.ToTable("FormRicRollOuts");
+                });
+
+            modelBuilder.Entity("Core.Models.Entities.FormRicRollOutApproval", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("ApprovalDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ApprovalStatus")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid?>("ApproverId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("FormRicRollOutId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("IdApprover")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("IdFormRicRollOut")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Role")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ApproverId");
+
+                    b.HasIndex("FormRicRollOutId");
+
+                    b.ToTable("FormRicRollOutApprovals");
+                });
+
+            modelBuilder.Entity("Core.Models.Entities.FormRicRollOutHistory", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("EditedFieldsJson")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid?>("EditorId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("FormRicRollOutId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("IdEditor")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("IdFormRicRollOut")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("SnapshotJson")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("Version")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EditorId");
+
+                    b.HasIndex("FormRicRollOutId");
+
+                    b.ToTable("FormRicRollOutHistories");
+                });
+
             modelBuilder.Entity("Core.Models.Entities.Group", b =>
                 {
                     b.Property<Guid>("Id")
@@ -261,6 +405,43 @@ namespace Core.Migrations
                     b.HasIndex("UserId");
 
                     b.ToTable("ReviewFormRics");
+                });
+
+            modelBuilder.Entity("Core.Models.Entities.ReviewFormRicRollOut", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Catatan")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("FormRicRollOutId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("IdFormRicRollOut")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("IdUser")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("RoleReview")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid?>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FormRicRollOutId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("ReviewFormRicRollOuts");
                 });
 
             modelBuilder.Entity("Core.Models.Entities.UndanganFormRic", b =>
@@ -796,6 +977,55 @@ namespace Core.Migrations
                     b.Navigation("Editor");
                 });
 
+            modelBuilder.Entity("Core.Models.Entities.FormRicRollOut", b =>
+                {
+                    b.HasOne("Core.Models.Entities.Group", "Group")
+                        .WithMany()
+                        .HasForeignKey("IdGroupUser")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Core.Models.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("IdUser")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Group");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Core.Models.Entities.FormRicRollOutApproval", b =>
+                {
+                    b.HasOne("Core.Models.Entities.User", "Approver")
+                        .WithMany()
+                        .HasForeignKey("ApproverId");
+
+                    b.HasOne("Core.Models.Entities.FormRicRollOut", "FormRicRollOut")
+                        .WithMany("Approvals")
+                        .HasForeignKey("FormRicRollOutId");
+
+                    b.Navigation("Approver");
+
+                    b.Navigation("FormRicRollOut");
+                });
+
+            modelBuilder.Entity("Core.Models.Entities.FormRicRollOutHistory", b =>
+                {
+                    b.HasOne("Core.Models.Entities.User", "Editor")
+                        .WithMany()
+                        .HasForeignKey("EditorId");
+
+                    b.HasOne("Core.Models.Entities.FormRicRollOut", "FormRicRollOut")
+                        .WithMany("Histories")
+                        .HasForeignKey("FormRicRollOutId");
+
+                    b.Navigation("Editor");
+
+                    b.Navigation("FormRicRollOut");
+                });
+
             modelBuilder.Entity("Core.Models.Entities.ReviewFormRic", b =>
                 {
                     b.HasOne("Core.Models.Entities.FormRic", "FormRic")
@@ -807,6 +1037,21 @@ namespace Core.Migrations
                         .HasForeignKey("UserId");
 
                     b.Navigation("FormRic");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Core.Models.Entities.ReviewFormRicRollOut", b =>
+                {
+                    b.HasOne("Core.Models.Entities.FormRicRollOut", "FormRicRollOut")
+                        .WithMany("Reviews")
+                        .HasForeignKey("FormRicRollOutId");
+
+                    b.HasOne("Core.Models.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId");
+
+                    b.Navigation("FormRicRollOut");
 
                     b.Navigation("User");
                 });
@@ -839,6 +1084,15 @@ namespace Core.Migrations
                         .HasForeignKey("GroupId");
 
                     b.Navigation("Group");
+                });
+
+            modelBuilder.Entity("Core.Models.Entities.FormRicRollOut", b =>
+                {
+                    b.Navigation("Approvals");
+
+                    b.Navigation("Histories");
+
+                    b.Navigation("Reviews");
                 });
 
             modelBuilder.Entity("Core.Models.Entities.Group", b =>
