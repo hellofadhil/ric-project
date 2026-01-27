@@ -18,6 +18,8 @@ namespace OnePro.Front.Controllers.Ric
         private const string ViewReviewIndex = "~/Views/Ric/Review/Index.cshtml";
         private const string ViewReviewForm  = "~/Views/Ric/Review/Form.cshtml";
 
+        private const string ViewReviewApprovalDetail = "~/Views/Ric/Approval/Detail.cshtml";
+
         public RicReviewController(IRicService ricService, ILogger<RicReviewController> logger, IWebHostEnvironment env)
             : base(ricService, logger, env) { }
 
@@ -126,5 +128,66 @@ namespace OnePro.Front.Controllers.Ric
             ModelState.AddModelError("", "Action tidak valid.");
             return View(ViewReviewForm, model);
         }
+
+        //   [RoleRequired(Role.User_Manager, Role.User_VP)]
+        // [HttpGet("Ric/Review/Approval")]
+        // public async Task<IActionResult> ApprovalIndex()
+        // {
+        //     if (!TryGetToken(out var token))
+        //         return RedirectToLogin();
+
+        //     // reuse list my rics, nanti difilter di view (atau bisa filter di controller)
+        //     var rics = await RicService.GetMyRicsAsync(token);
+
+        //     // tampilkan yang lagi approval (pipeline user)
+        //     var approvalRics = rics.Where(x =>
+        //             x.Status == StatusRic.Approval_Manager_User.ToString()
+        //             || x.Status == StatusRic.Approval_VP_User.ToString()
+        //             || x.Status == StatusRic.Approval_Manager_BR.ToString()
+        //             || x.Status == StatusRic.Approval_Manager_SARM.ToString()
+        //             || x.Status == StatusRic.Approval_VP_SARM.ToString()
+        //             || x.Status == StatusRic.Approval_Manager_ECS.ToString()
+        //             || x.Status == StatusRic.Approval_VP_ECS.ToString()
+        //         )
+        //         .ToList();
+
+        //     return View(ViewReviewApprovalDetail, approvalRics);
+        // }
+
+        // [RoleRequired(Role.BR_Manager, Role.SARM_Manager, Role.SARM_VP, Role.ECS_Manager, Role.ECS_VP)]
+        // [HttpGet("Ric/Review/Approval/{id:guid}")]
+        // public async Task<IActionResult> Approval(Guid id)
+        // {
+        //     if (!TryGetToken(out var token))
+        //         return RedirectToLogin();
+
+        //     var ric = await RicService.GetRicByIdAsync(id, token);
+        //     if (ric == null)
+        //         return NotFound();
+
+        //     var vm = RicMapper.MapToEditViewModel(ric);
+
+        //     return View(ViewReviewApprovalDetail, vm);
+        // }
+
+        // [RoleRequired(Role.BR_Manager, Role.SARM_Manager, Role.SARM_VP, Role.ECS_Manager, Role.ECS_VP)]
+        // [HttpPost("~/Ric/Review/Approval/{id:guid}/approve")]
+        // [ValidateAntiForgeryToken]
+        // public async Task<IActionResult> ApproveAction(Guid id)
+        // {
+        //     if (!TryGetToken(out var token))
+        //         return RedirectToLogin();
+
+        //     var ok = await RicService.ApproveAsync(id, token);
+        //     if (!ok)
+        //     {
+        //         TempData["ErrorMessage"] =
+        //             "Gagal approve RIC. Cek status/role atau pending approval belum ada.";
+        //         return RedirectToAction(nameof(Approval), new { id });
+        //     }
+
+        //     TempData["SuccessMessage"] = "RIC berhasil di-approve ✅";
+        //     return RedirectToAction(nameof(Approval), new { id });
+        // }
     }
 }

@@ -91,6 +91,11 @@
                         <div class="px-6 py-4 space-y-3">
                             @if (Model.ExistingAsIsFileUrls != null && Model.ExistingAsIsFileUrls.Any())
                             {
+                                for (var i = 0; i < Model.ExistingAsIsFileUrls.Count; i++)
+                                {
+                                    <input type="hidden" name="ExistingAsIsFileUrls[@i]" value="@Model.ExistingAsIsFileUrls[i]" />
+                                }
+
                                 <div class="mb-2 text-xs text-slate-600">
                                     <span class="font-medium">File saat ini:</span>
                                     <ul class="mt-1 list-disc pl-5 space-y-1">
@@ -226,6 +231,10 @@
                         <div class="px-6 py-4 space-y-3">
                             @if (Model.ExistingToBeFileUrls != null && Model.ExistingToBeFileUrls.Any())
                             {
+                                for (var i = 0; i < Model.ExistingToBeFileUrls.Count; i++)
+                                {
+                                    <input type="hidden" name="ExistingToBeFileUrls[@i]" value="@Model.ExistingToBeFileUrls[i]" />
+                                }
                                 <div class="mb-2 text-xs text-slate-600">
                                     <span class="font-medium">File saat ini:</span>
                                     <ul class="mt-1 list-disc pl-5 space-y-1">
@@ -263,6 +272,10 @@
                         <div class="px-6 py-4 space-y-3">
                             @if (Model.ExistingExpectedCompletionFileUrls != null && Model.ExistingExpectedCompletionFileUrls.Any())
                             {
+                                    for (var i = 0; i < Model.ExistingExpectedCompletionFileUrls.Count; i++)
+                                    {
+                                        <input type="hidden" name="ExistingExpectedCompletionFileUrls[@i]" value="@Model.ExistingExpectedCompletionFileUrls[i]" />
+                                    }
                                 <div class="mb-2 text-xs text-slate-600">
                                     <span class="font-medium">File saat ini:</span>
                                     <ul class="mt-1 list-disc pl-5 space-y-1">

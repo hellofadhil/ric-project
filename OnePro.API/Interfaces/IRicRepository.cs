@@ -1,11 +1,13 @@
 using Core.Models.Entities;
 using Core.Models.Enums;
+using Core.RequestModels.Ric;
 
 namespace OnePro.API.Interfaces
 {
     public interface IRicRepository
     {
         Task<List<RicListItemResponse>> GetAllByGroupAsync(Guid groupId);
+        Task<List<RicListItemResponse>> GetApprovalQueueAsync(Guid groupId, string role);
         Task<FormRic?> GetByIdAsync(Guid id);
         Task<FormRicDetailResponse?> GetDetailByIdAsync(Guid id);
 

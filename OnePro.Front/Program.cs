@@ -1,13 +1,14 @@
-using OnePro.Front.Services.Interfaces;
-using OnePro.Front.Services.Implement;
-using OnePro.Front.Middleware;
 using Core.Helpers;
+using OnePro.Front.Middleware;
+using OnePro.Front.Services.Implement;
+using OnePro.Front.Services.Interfaces;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddTransient<IAuthService, AuthService>();
 builder.Services.AddScoped<IGroupService, GroupService>();
 builder.Services.AddScoped<IRicService, RicService>();
+builder.Services.AddScoped<IRicRollOutService, RicRollOutService>();
 
 builder.Services.AddHttpContextAccessor();
 
@@ -42,8 +43,6 @@ app.UseMiddleware<AuthMiddleware>();
 app.UseAuthentication();
 app.UseAuthorization();
 
-app.MapControllerRoute(
-    name: "default",
-    pattern: "{controller=Dashboard}/{action=Index}/{id?}");
+app.MapControllerRoute(name: "default", pattern: "{controller=Dashboard}/{action=Index}/{id?}");
 
 app.Run();

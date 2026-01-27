@@ -21,14 +21,7 @@
 <div class="min-h-screen bg-slate-50">
     <div class="max-w-7xl mx-auto px-2 sm:px-2 py-4">
 
-        <form asp-controller="RicApproval"
-              asp-action="ApproveAction"
-              method="post">
-
-            @Html.AntiForgeryToken()
-
             <!-- id disimpan hidden -->
-            <input asp-for="Id" type="hidden" />
 
             <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
 
@@ -322,8 +315,9 @@
                         </a>
 
                         <div class="flex items-center gap-3">
-    <form asp-action="ApproveAction" asp-route-id="@Model.Id" method="post">
+    <form asp-controller="RicUser" asp-action="ApproveAction" asp-route-id="@Model.Id" method="post">
         @Html.AntiForgeryToken()
+                    <input asp-for="Id" type="hidden" />
         <button type="submit"
                 class="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl
                        bg-green-600 hover:bg-green-700 text-white text-sm font-semibold transition"
@@ -437,7 +431,6 @@
                 <!-- END SIDEBAR -->
 
             </div>
-        </form>
 
     </div>
 </div>

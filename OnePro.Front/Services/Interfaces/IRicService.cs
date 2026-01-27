@@ -1,4 +1,5 @@
 using OnePro.Front.Models;
+// using Core.RequestModels.RicRollOut;
 
 namespace OnePro.Front.Services.Interfaces
 {
@@ -9,6 +10,7 @@ namespace OnePro.Front.Services.Interfaces
 
         Task CreateRicAsync(FormRicCreateRequest request, string token);
         Task UpdateRicAsync(Guid id, FormRicUpdateRequest request, string token);
+        Task<bool> DeleteRicAsync(Guid id, string token);
 
         // NEW: aksi review (approve/reject)
         // Task ReviewRicAsync(Guid id, RicReviewRequest request, string token);

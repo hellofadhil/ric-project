@@ -1,13 +1,12 @@
 using System.Security.Claims;
-using System.Text.Json;
 using Core.Models;
 using Core.Models.Entities;
-using Core.Models.Enums;
 using Core.Models.Enums;
 using Core.RequestModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using OnePro.API.Auth;
 using OnePro.API.Interfaces;
 
 namespace OnePro.API.Controllers.V1;
@@ -29,7 +28,7 @@ public class RicController : ControllerBase
     // =========================
     // CLAIM HELPERS
     // =========================
-    private Guid GetGuid(string key)
+    private Guid GetGuidClaim(string key)
     {
         var value = User.FindFirstValue(key);
         if (!Guid.TryParse(value, out var result))
@@ -37,19 +36,18 @@ public class RicController : ControllerBase
         return result;
     }
 
-    private string GetString(string key)
+    private string GetStringClaim(string key)
     {
-        // 1) exact match (mis. "id", "groupId", "role")
+        // exact match (custom claims)
         var value = User.FindFirstValue(key);
 
-        // 2) fallback khusus untuk "role" (karena sering dimap ke ClaimTypes.Role)
+        // fallbacks (common claim mappings)
         if (
             string.IsNullOrWhiteSpace(value)
             && key.Equals("role", StringComparison.OrdinalIgnoreCase)
         )
             value = User.FindFirstValue(ClaimTypes.Role);
 
-        // 3) fallback kalau lo suatu saat pakai ClaimTypes.Name (opsional)
         if (
             string.IsNullOrWhiteSpace(value)
             && key.Equals("name", StringComparison.OrdinalIgnoreCase)
@@ -62,11 +60,36 @@ public class RicController : ControllerBase
         return value;
     }
 
+    // =========================
+    // MAPPING HELPERS
+    // =========================
+    private static void ApplyRequestToEntity(FormRic ric, FormRicRequest req)
+    {
+        ric.Judul = req.Judul;
+        ric.Hastag = req.Hastag;
+        ric.AsIsProcessRasciFile = req.AsIsProcessRasciFile;
+        ric.Permasalahan = req.Permasalahan;
+        ric.DampakMasalah = req.DampakMasalah;
+        ric.FaktorPenyebabMasalah = req.FaktorPenyebabMasalah;
+        ric.SolusiSaatIni = req.SolusiSaatIni;
+        ric.AlternatifSolusi = req.AlternatifSolusi;
+        ric.ToBeProcessBusinessRasciKkiFile = req.ToBeProcessBusinessRasciKkiFile;
+        ric.PotensiValueCreation = req.PotensiValueCreation;
+        ric.ExcpectedCompletionTargetFile = req.ExcpectedCompletionTargetFile;
+        ric.HasilSetelahPerbaikan = req.HasilSetelahPerbaikan;
+    }
+
+    private static void Touch(FormRic ric) => ric.UpdatedAt = DateTime.UtcNow;
+
+    // =========================
+    // QUERIES
+    // =========================
     [HttpGet("my")]
     public async Task<IActionResult> GetMyGroupRics()
     {
-        var groupId = GetGuid("groupId");
-        return Ok(await _repository.GetAllByGroupAsync(groupId));
+        var groupId = GetGuidClaim("groupId");
+        var data = await _repository.GetAllByGroupAsync(groupId);
+        return Ok(data);
     }
 
     [HttpGet("{id:guid}")]
@@ -83,32 +106,23 @@ public class RicController : ControllerBase
         return ric is null ? NotFound("RIC not found.") : Ok(ric);
     }
 
+    // =========================
+    // COMMANDS
+    // =========================
+    [RoleRequired(Role.User_Pic)]
     [HttpPost]
-    [Authorize(Roles = "User_Pic,BR_Pic,SARM_Pic")]
-    public async Task<IActionResult> Create(FormRicRequest req)
+    // [Authorize(Roles = "User_Pic,BR_Pic,SARM_Pic")]
+    public async Task<IActionResult> Create([FromBody] FormRicRequest req)
     {
         if (!ModelState.IsValid)
             return ValidationProblem(ModelState);
 
         var ric = new FormRic
         {
-            IdUser = GetGuid("id"),
-            IdGroupUser = GetGuid("groupId"),
-
-            Judul = req.Judul,
-            Hastag = req.Hastag,
-            AsIsProcessRasciFile = req.AsIsProcessRasciFile,
-            Permasalahan = req.Permasalahan,
-            DampakMasalah = req.DampakMasalah,
-            FaktorPenyebabMasalah = req.FaktorPenyebabMasalah,
-            SolusiSaatIni = req.SolusiSaatIni,
-            AlternatifSolusi = req.AlternatifSolusi,
-            ToBeProcessBusinessRasciKkiFile = req.ToBeProcessBusinessRasciKkiFile,
-            PotensiValueCreation = req.PotensiValueCreation,
-            ExcpectedCompletionTargetFile = req.ExcpectedCompletionTargetFile,
-            HasilSetelahPerbaikan = req.HasilSetelahPerbaikan,
-
+            IdUser = GetGuidClaim("id"),
+            IdGroupUser = GetGuidClaim("groupId"),
             Status = req.Status,
+
             BrConfirm = false,
             SarmConfirm = false,
             EcsConfirm = false,
@@ -117,19 +131,23 @@ public class RicController : ControllerBase
             UpdatedAt = DateTime.UtcNow,
         };
 
-        return await _repository.CreateAsync(ric)
+        ApplyRequestToEntity(ric, req);
+
+        var ok = await _repository.CreateAsync(ric);
+        return ok
             ? CreatedAtAction(nameof(GetById), new { id = ric.Id }, ric)
             : StatusCode(500, "Failed to create RIC.");
     }
 
+    [RoleRequired(Role.User_Pic)]
     [HttpPut("{id:guid}")]
-    [Authorize(Roles = "User_Pic,BR_Pic,SARM_Pic")]
-    public async Task<IActionResult> Update(Guid id, FormRicRequest req)
+    // [Authorize(Roles = "User_Pic,BR_Pic,SARM_Pic")]
+    public async Task<IActionResult> Update(Guid id, [FromBody] FormRicRequest req)
     {
         if (!ModelState.IsValid)
             return ValidationProblem(ModelState);
 
-        var groupId = GetGuid("groupId");
+        var groupId = GetGuidClaim("groupId");
         var ric = await _repository.GetByIdAsync(id);
 
         if (ric is null)
@@ -138,106 +156,70 @@ public class RicController : ControllerBase
         if (ric.IdGroupUser != groupId)
             return Forbid();
 
-        ric.Judul = req.Judul;
-        ric.Hastag = req.Hastag;
-        ric.AsIsProcessRasciFile = req.AsIsProcessRasciFile;
-        ric.Permasalahan = req.Permasalahan;
-        ric.DampakMasalah = req.DampakMasalah;
-        ric.FaktorPenyebabMasalah = req.FaktorPenyebabMasalah;
-        ric.SolusiSaatIni = req.SolusiSaatIni;
-        ric.AlternatifSolusi = req.AlternatifSolusi;
-        ric.ToBeProcessBusinessRasciKkiFile = req.ToBeProcessBusinessRasciKkiFile;
-        ric.PotensiValueCreation = req.PotensiValueCreation;
-        ric.ExcpectedCompletionTargetFile = req.ExcpectedCompletionTargetFile;
-        ric.HasilSetelahPerbaikan = req.HasilSetelahPerbaikan;
+        ApplyRequestToEntity(ric, req);
         ric.Status = req.Status;
-        ric.UpdatedAt = DateTime.UtcNow;
+        Touch(ric);
 
-        return await _repository.UpdateAsync(ric)
-            ? NoContent()
-            : StatusCode(500, "Failed to update RIC.");
+        var ok = await _repository.UpdateAsync(ric);
+        return ok ? NoContent() : StatusCode(500, "Failed to update RIC.");
     }
 
+    [RoleRequired(Role.User_Pic)]
     [HttpPut("{id:guid}/resubmit")]
-    [Authorize(Roles = "User_Pic,BR_Pic,SARM_Pic")]
-    public async Task<IActionResult> ResubmitAfterRejection(Guid id, FormRicRequest req)
+    // [Authorize(Roles = "User_Pic,BR_Pic,SARM_Pic")]
+    public async Task<IActionResult> ResubmitAfterRejection(Guid id, [FromBody] FormRicRequest req)
     {
         if (!ModelState.IsValid)
             return ValidationProblem(ModelState);
 
-        var groupId = GetGuid("groupId");
-        var editorId = GetGuid("id");
+        var groupId = GetGuidClaim("groupId");
+        var editorId = GetGuidClaim("id");
 
         var ric = await _repository.GetByIdAsync(id);
-
         if (ric is null)
             return NotFound("RIC not found.");
 
         if (ric.IdGroupUser != groupId)
             return Forbid();
 
-        ric.Judul = req.Judul;
-        ric.Hastag = req.Hastag;
-        ric.AsIsProcessRasciFile = req.AsIsProcessRasciFile;
-        ric.Permasalahan = req.Permasalahan;
-        ric.DampakMasalah = req.DampakMasalah;
-        ric.FaktorPenyebabMasalah = req.FaktorPenyebabMasalah;
-        ric.SolusiSaatIni = req.SolusiSaatIni;
-        ric.AlternatifSolusi = req.AlternatifSolusi;
-        ric.ToBeProcessBusinessRasciKkiFile = req.ToBeProcessBusinessRasciKkiFile;
-        ric.PotensiValueCreation = req.PotensiValueCreation;
-        ric.ExcpectedCompletionTargetFile = req.ExcpectedCompletionTargetFile;
-        ric.HasilSetelahPerbaikan = req.HasilSetelahPerbaikan;
+        ApplyRequestToEntity(ric, req);
         ric.Status = StatusRic.Review_BR;
-        ric.UpdatedAt = DateTime.UtcNow;
+        Touch(ric);
 
-        return await _repository.ResubmitAfterRejection(ric, editorId)
-            ? NoContent()
-            : StatusCode(500, "Failed to update RIC.");
+        var ok = await _repository.ResubmitAfterRejection(ric, editorId);
+        return ok ? NoContent() : StatusCode(500, "Failed to update RIC.");
     }
 
+    [RoleRequired(Role.BR_Pic, Role.SARM_Pic, Role.ECS_Pic)]
     [HttpPut("{id:guid}/reject")]
-    public async Task<IActionResult> Reject(Guid id, RejectRicRequest req)
+    public async Task<IActionResult> Reject(Guid id, [FromBody] RejectRicRequest req)
     {
         if (!ModelState.IsValid)
             return ValidationProblem(ModelState);
 
-        var userId = GetGuid("id");
+        var userId = GetGuidClaim("id");
 
         var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId);
         if (user is null)
             return Unauthorized("User not found.");
 
-        RoleReview reviewRole;
-        StatusRic newStatus;
-
-        switch (user.Role)
+        // role -> (reviewRole, newStatus)
+        var rejectMap = new Dictionary<Role, (RoleReview ReviewRole, StatusRic NewStatus)>
         {
-            case Role.BR_Pic:
-                reviewRole = RoleReview.BR;
-                newStatus = StatusRic.Return_BR_To_User;
-                break;
+            [Role.BR_Pic] = (RoleReview.BR, StatusRic.Return_BR_To_User),
+            [Role.SARM_Pic] = (RoleReview.SARM, StatusRic.Return_SARM_To_BR),
+            [Role.ECS_Pic] = (RoleReview.ECS, StatusRic.Return_ECS_To_BR),
+        };
 
-            case Role.ECS_Pic:
-                reviewRole = RoleReview.ECS;
-                newStatus = StatusRic.Return_ECS_To_BR;
-                break;
-
-            case Role.SARM_Pic:
-                reviewRole = RoleReview.SARM;
-                newStatus = StatusRic.Return_SARM_To_BR;
-                break;
-
-            default:
-                return Forbid();
-        }
+        if (!rejectMap.TryGetValue(user.Role, out var cfg))
+            return Forbid();
 
         var ric = await _repository.GetByIdAsync(id);
         if (ric is null)
             return NotFound("RIC not found.");
 
-        ric.Status = newStatus;
-        ric.UpdatedAt = DateTime.UtcNow;
+        ric.Status = cfg.NewStatus;
+        Touch(ric);
 
         await _repository.AddReviewAsync(
             new ReviewFormRic
@@ -245,7 +227,7 @@ public class RicController : ControllerBase
                 IdFormRic = ric.Id,
                 IdUser = userId,
                 Catatan = req.Catatan,
-                RoleReview = reviewRole,
+                RoleReview = cfg.ReviewRole,
                 CreatedAt = DateTime.UtcNow,
             }
         );
@@ -257,360 +239,159 @@ public class RicController : ControllerBase
             {
                 message = "RIC rejected",
                 status = ric.Status.ToString(),
-                reviewer = reviewRole.ToString(),
+                reviewer = cfg.ReviewRole.ToString(),
             }
         );
     }
 
-    // [HttpPut("{id:guid}/forward")]
-    // [Authorize(Roles = "User_Pic")]
-    // public async Task<IActionResult> Forward(Guid id, FormRicRequest req)
-    // {
-    //     if (!ModelState.IsValid)
-    //         return ValidationProblem(ModelState);
-
-    //     var editorId = GetGuid("id");
-    //     var groupId = GetGuid("groupId");
-    //     var role = GetString("role");
-
-    //     Enum.TryParse<Role>(roleStr, out var role)
-
-    //     if (!Enum.TryParse<Role>(roleStr, out var role))
-    //         return Forbid("Invalid role.");
-
-    //     var ric = await _repository.GetByIdAsync(id);
-    //     if (ric is null)
-    //         return NotFound("RIC not found.");
-
-    //     if (ric.IdGroupUser != groupId)
-    //         return Forbid();
-
-    //     if (ric.Status != StatusRic.Return_BR_To_User)
-    //         return BadRequest("RIC is not in returned state.");
-
-    //     // await _repository.AddHistoryAsync(
-    //     //     new FormRicHistory
-    //     //     {
-    //     //         IdFormRic = ric.Id,
-    //     //         IdEditor = userId,
-    //     //         Version = 1,
-    //     //         SnapshotJson = JsonSerializer.Serialize(ric),
-    //     //         EditedFieldsJson = "Resubmitted after reject",
-    //     //         CreatedAt = DateTime.UtcNow,
-    //     //     }
-    //     // );
-
-    //     ric.Judul = req.Judul;
-    //     ric.Hastag = req.Hastag;
-    //     ric.AsIsProcessRasciFile = req.AsIsProcessRasciFile;
-    //     ric.Permasalahan = req.Permasalahan;
-    //     ric.DampakMasalah = req.DampakMasalah;
-    //     ric.FaktorPenyebabMasalah = req.FaktorPenyebabMasalah;
-    //     ric.SolusiSaatIni = req.SolusiSaatIni;
-    //     ric.AlternatifSolusi = req.AlternatifSolusi;
-    //     ric.ToBeProcessBusinessRasciKkiFile = req.ToBeProcessBusinessRasciKkiFile;
-    //     ric.PotensiValueCreation = req.PotensiValueCreation;
-    //     ric.ExcpectedCompletionTargetFile = req.ExcpectedCompletionTargetFile;
-    //     ric.HasilSetelahPerbaikan = req.HasilSetelahPerbaikan;
-
-    //     // ric.Status = StatusRic.Review_SARM;
-    //     ric.UpdatedAt = DateTime.UtcNow;
-
-    //     if (role == Role.BR_Pic)
-    //     {
-    //         ric.Status = StatusRic.Review_SARM;
-    //     }
-    //     else if (role == Role.SARM_Pic)
-    //     {
-    //         ric.Status = StatusRic.Review_SARM;
-    //     }
-    //     else if (role == Role.ECS_Pic)
-    //     {
-    //         ric.Status = StatusRic.Approval_Manager_User;
-    //     }
-
-    //     return await _repository.UpdateAsync(ric)
-    //         ? Ok("RIC resubmitted successfully.")
-    //         : StatusCode(500, "Failed to submit RIC.");
-    // }
-
+    [RoleRequired(Role.BR_Pic, Role.SARM_Pic, Role.ECS_Pic)]
     [HttpPut("{id:guid}/forward")]
-    [Authorize(Roles = "BR_Pic,SARM_Pic,ECS_Pic")]
-    // [Authorize(Roles = "BR_Pic,SARM_Pic")]
-    public async Task<IActionResult> Forward(Guid id, FormRicRequest req)
+    // [Authorize(Roles = "BR_Pic,SARM_Pic,ECS_Pic")]
+    public async Task<IActionResult> Forward(Guid id, [FromBody] FormRicRequest req)
     {
         if (!ModelState.IsValid)
             return ValidationProblem(ModelState);
 
-        var editorId = GetGuid("id");
-        var groupId = GetGuid("groupId");
-        var roleStr = GetString("role");
+        var editorId = GetGuidClaim("id");
+        var roleStr = GetStringClaim("role");
 
-        if (editorId == Guid.Empty || string.IsNullOrEmpty(roleStr))
-            return Unauthorized();
-
-        if (!Enum.TryParse<Role>(roleStr, out var role))
+        if (!Enum.TryParse(roleStr, out Role role))
             return Forbid("Invalid role.");
 
         var ric = await _repository.GetByIdAsync(id);
         if (ric is null)
             return NotFound("RIC not found.");
 
-        // kalau rule lo memang harus satu group
-        // if (ric.IdGroupUser != groupId)
-        //     return Forbid();
+        // kalau forward memang membawa revisi data
+        ApplyRequestToEntity(ric, req);
+        Touch(ric);
 
-        // Update fields (kalau forward memang membawa revisi data)
-        ric.Judul = req.Judul;
-        ric.Hastag = req.Hastag;
-        ric.AsIsProcessRasciFile = req.AsIsProcessRasciFile;
-        ric.Permasalahan = req.Permasalahan;
-        ric.DampakMasalah = req.DampakMasalah;
-        ric.FaktorPenyebabMasalah = req.FaktorPenyebabMasalah;
-        ric.SolusiSaatIni = req.SolusiSaatIni;
-        ric.AlternatifSolusi = req.AlternatifSolusi;
-        ric.ToBeProcessBusinessRasciKkiFile = req.ToBeProcessBusinessRasciKkiFile;
-        ric.PotensiValueCreation = req.PotensiValueCreation;
-        ric.ExcpectedCompletionTargetFile = req.ExcpectedCompletionTargetFile;
-        ric.HasilSetelahPerbaikan = req.HasilSetelahPerbaikan;
-
-        ric.UpdatedAt = DateTime.UtcNow;
-
-        // Role-based status transition + status guard
-        if (role == Role.BR_Pic)
+        // transitions + guards
+        switch (role)
         {
-            if (
-                ric.Status
-                is not (
-                    StatusRic.Submitted_To_BR
-                    or StatusRic.Review_BR
-                    or StatusRic.Return_SARM_To_BR
-                    or StatusRic.Return_ECS_To_BR
+            case Role.BR_Pic:
+                if (
+                    ric.Status
+                    is not (
+                        StatusRic.Submitted_To_BR
+                        or StatusRic.Review_BR
+                        or StatusRic.Return_SARM_To_BR
+                        or StatusRic.Return_ECS_To_BR
+                    )
                 )
-            )
-                return BadRequest($"BR cannot forward from status {ric.Status}");
+                    return BadRequest($"BR cannot forward from status {ric.Status}");
 
-            ric.Status = StatusRic.Review_SARM;
-        }
-        else if (role == Role.SARM_Pic)
-        {
-            if (ric.Status != StatusRic.Review_SARM)
-                return BadRequest("Status RIC tidak sesuai untuk SARM.");
+                ric.Status = StatusRic.Review_SARM;
+                break;
 
-            ric.Status = StatusRic.Review_ECS;
-        }
-        else if (role == Role.ECS_Pic)
-        {
-            if (ric.Status != StatusRic.Review_ECS)
-                return BadRequest("Status RIC tidak sesuai untuk ECS.");
+            case Role.SARM_Pic:
+                if (ric.Status != StatusRic.Review_SARM)
+                    return BadRequest($"SARM cannot forward from status {ric.Status}");
 
-            ric.Status = StatusRic.Approval_Manager_User;
+                ric.Status = StatusRic.Review_ECS;
+                break;
 
-            await _repository.EnsureApprovalsCreatedAsync(ric.Id);
-        }
-        else
-        {
-            return Forbid("Role not allowed.");
+            case Role.ECS_Pic:
+                if (ric.Status != StatusRic.Review_ECS)
+                    return BadRequest($"ECS cannot forward from status {ric.Status}");
+
+                ric.Status = StatusRic.Approval_Manager_User;
+                await _repository.EnsureApprovalsCreatedAsync(ric.Id);
+                break;
+
+            default:
+                return Forbid("Role not allowed.");
         }
 
-        return await _repository.MoveRicToNextStageAsync(ric, editorId)
-            ? Ok("RIC forwarded successfully.")
-            : StatusCode(500, "Failed to forward RIC.");
+        var ok = await _repository.MoveRicToNextStageAsync(ric, editorId);
+        return ok ? Ok("RIC forwarded successfully.") : StatusCode(500, "Failed to forward RIC.");
     }
 
-    // [HttpPut("{id:guid}/approve")]
-    // [Authorize(Roles = "User_Manager,User_VP,BR_Manager,SARM_Manager,SARM_VP,ECS_Manager,ECS_VP")]
-    // public async Task<IActionResult> Approve(Guid id)
-    // {
-    //     if (!ModelState.IsValid)
-    //         return ValidationProblem(ModelState);
-
-    //     var editorId = GetGuid("id");
-    //     var groupId = GetGuid("groupId");
-    //     var roleStr = GetString("role");
-
-    //     if (editorId == Guid.Empty || string.IsNullOrEmpty(roleStr))
-    //         return Unauthorized();
-
-    //     if (!Enum.TryParse<Role>(roleStr, out var role))
-    //         return Forbid("Invalid role.");
-
-    //     var ric = await _repository.GetByIdAsync(id);
-    //     if (ric is null)
-    //         return NotFound("RIC not found.");
-
-    //     // Role-based status transition + status guard
-    //     if (role == Role.User_Manager)
-    //     {
-    //         if (ric.Status is not (StatusRic.Approval_Manager_User))
-    //             return BadRequest($"BR cannot forward from status {ric.Status}");
-
-    //         ric.Status = StatusRic.Approval_VP_User;
-    //     }
-    //     else if (role == Role.User_VP)
-    //     {
-    //         if (ric.Status is not (StatusRic.Approval_VP_User))
-    //             return BadRequest($"BR cannot forward from status {ric.Status}");
-
-    //         ric.Status = StatusRic.Approval_Manager_BR;
-    //     }
-    //     else if (role == Role.BR_Manager)
-    //     {
-    //         if (ric.Status is not (StatusRic.Approval_Manager_BR))
-    //             return BadRequest($"BR cannot forward from status {ric.Status}");
-
-    //         ric.Status = StatusRic.Approval_Manager_SARM;
-    //     }
-    //     else if (role == Role.SARM_Manager)
-    //     {
-    //         if (ric.Status is not (StatusRic.Approval_Manager_SARM))
-    //             return BadRequest($"BR cannot forward from status {ric.Status}");
-
-    //         ric.Status = StatusRic.Approval_VP_SARM;
-    //     }
-    //     else if (role == Role.SARM_VP)
-    //     {
-    //         if (ric.Status is not (StatusRic.Approval_VP_SARM))
-    //             return BadRequest($"BR cannot forward from status {ric.Status}");
-
-    //         ric.Status = StatusRic.Approval_Manager_ECS;
-    //     }
-    //     else if (role == Role.ECS_Manager)
-    //     {
-    //         if (ric.Status is not (StatusRic.Approval_Manager_ECS))
-    //             return BadRequest($"BR cannot forward from status {ric.Status}");
-
-    //         ric.Status = StatusRic.Approval_VP_ECS;
-    //     }
-    //     else if (role == Role.ECS_VP)
-    //     {
-    //         if (ric.Status is not (StatusRic.Approval_VP_ECS))
-    //             return BadRequest($"BR cannot forward from status {ric.Status}");
-
-    //         ric.Status = StatusRic.Done;
-    //     }
-
-    //     ric.UpdatedAt = DateTime.UtcNow;
-    //     // return Ok("Mantap gan");
-    //     var approvalOk = await _repository.MarkApprovalApprovedAsync(
-    //         id,
-    //         approvalRole.Value,
-    //         editorId
-    //     );
-    //     if (!approvalOk)
-    //         return BadRequest($"No pending approval found for role {approvalRole.Value}.");
-    //     // return await _repository.MoveRicToNextStageAsync(ric, editorId)
-    //     //     ? Ok("RIC forwarded successfully.")
-    //     //     : StatusCode(500, "Failed to forward RIC.");
-    // }
-
+    [RoleRequired(Role.User_Manager, Role.User_VP, Role.BR_Manager, Role.ECS_Manager, Role.SARM_VP)]
     [HttpPut("{id:guid}/approve")]
-    [Authorize(Roles = "User_Manager,User_VP,BR_Manager,SARM_Manager,SARM_VP,ECS_Manager,ECS_VP")]
+    // [Authorize(Roles = "User_Manager,User_VP,BR_Manager,SARM_Manager,SARM_VP,ECS_Manager,ECS_VP")]
     public async Task<IActionResult> Approve(Guid id)
     {
         if (!ModelState.IsValid)
             return ValidationProblem(ModelState);
 
-        var editorId = GetGuid("id");
-        var roleStr = GetString("role");
+        var editorId = GetGuidClaim("id");
+        var roleStr = GetStringClaim("role");
 
-        if (editorId == Guid.Empty || string.IsNullOrWhiteSpace(roleStr))
-            return Unauthorized();
-
-        if (!Enum.TryParse<Role>(roleStr, out var role))
+        if (!Enum.TryParse(roleStr, out Role role))
             return Forbid("Invalid role.");
 
         var ric = await _repository.GetByIdAsync(id);
         if (ric is null)
             return NotFound("RIC not found.");
 
-        // map Role -> RoleApproval (biar update tabel approvals)
-        var approvalRole = role switch
+        // role -> (approvalRole, requiredStatus, nextStatus)
+        var approveMap = new Dictionary<
+            Role,
+            (RoleApproval ApprovalRole, StatusRic Required, StatusRic Next)
+        >
         {
-            Role.User_Manager => RoleApproval.User_Manager,
-            Role.User_VP => RoleApproval.User_VP,
-            Role.BR_Manager => RoleApproval.BR_Manager,
-            Role.SARM_Manager => RoleApproval.SARM_Manager,
-            Role.SARM_VP => RoleApproval.SARM_VP,
-            Role.ECS_Manager => RoleApproval.ECS_Manager,
-            Role.ECS_VP => RoleApproval.ECS_VP,
-            _ => (RoleApproval?)null,
+            [Role.User_Manager] = (
+                RoleApproval.User_Manager,
+                StatusRic.Approval_Manager_User,
+                StatusRic.Approval_VP_User
+            ),
+            [Role.User_VP] = (
+                RoleApproval.User_VP,
+                StatusRic.Approval_VP_User,
+                StatusRic.Approval_Manager_BR
+            ),
+            [Role.BR_Manager] = (
+                RoleApproval.BR_Manager,
+                StatusRic.Approval_Manager_BR,
+                StatusRic.Approval_Manager_SARM
+            ),
+            [Role.SARM_Manager] = (
+                RoleApproval.SARM_Manager,
+                StatusRic.Approval_Manager_SARM,
+                StatusRic.Approval_VP_SARM
+            ),
+            [Role.SARM_VP] = (
+                RoleApproval.SARM_VP,
+                StatusRic.Approval_VP_SARM,
+                StatusRic.Approval_Manager_ECS
+            ),
+            [Role.ECS_Manager] = (
+                RoleApproval.ECS_Manager,
+                StatusRic.Approval_Manager_ECS,
+                StatusRic.Approval_VP_ECS
+            ),
+            [Role.ECS_VP] = (RoleApproval.ECS_VP, StatusRic.Approval_VP_ECS, StatusRic.Done),
         };
 
-        if (approvalRole is null)
+        if (!approveMap.TryGetValue(role, out var cfg))
             return Forbid("Role is not allowed to approve.");
 
-        // guard + transition
-        if (role == Role.User_Manager)
-        {
-            if (ric.Status != StatusRic.Approval_Manager_User)
-                return BadRequest($"User Manager cannot approve from status {ric.Status}.");
+        if (ric.Status != cfg.Required)
+            return BadRequest($"{role} cannot approve from status {ric.Status}.");
 
-            ric.Status = StatusRic.Approval_VP_User;
-        }
-        else if (role == Role.User_VP)
-        {
-            if (ric.Status != StatusRic.Approval_VP_User)
-                return BadRequest($"User VP cannot approve from status {ric.Status}.");
-
-            ric.Status = StatusRic.Approval_Manager_BR;
-        }
-        else if (role == Role.BR_Manager)
-        {
-            if (ric.Status != StatusRic.Approval_Manager_BR)
-                return BadRequest($"BR Manager cannot approve from status {ric.Status}.");
-
-            ric.Status = StatusRic.Approval_Manager_SARM;
-        }
-        else if (role == Role.SARM_Manager)
-        {
-            if (ric.Status != StatusRic.Approval_Manager_SARM)
-                return BadRequest($"SARM Manager cannot approve from status {ric.Status}.");
-
-            ric.Status = StatusRic.Approval_VP_SARM;
-        }
-        else if (role == Role.SARM_VP)
-        {
-            if (ric.Status != StatusRic.Approval_VP_SARM)
-                return BadRequest($"SARM VP cannot approve from status {ric.Status}.");
-
-            ric.Status = StatusRic.Approval_Manager_ECS;
-        }
-        else if (role == Role.ECS_Manager)
-        {
-            if (ric.Status != StatusRic.Approval_Manager_ECS)
-                return BadRequest($"ECS Manager cannot approve from status {ric.Status}.");
-
-            ric.Status = StatusRic.Approval_VP_ECS;
-        }
-        else if (role == Role.ECS_VP)
-        {
-            if (ric.Status != StatusRic.Approval_VP_ECS)
-                return BadRequest($"ECS VP cannot approve from status {ric.Status}.");
-
-            ric.Status = StatusRic.Done;
-        }
-
-        ric.UpdatedAt = DateTime.UtcNow;
-
-        // 1) update approval record (Pending -> Approved)
+        // 1) mark approval pending -> approved
         var approvalOk = await _repository.MarkApprovalApprovedAsync(
             id,
-            approvalRole.Value,
+            cfg.ApprovalRole,
             editorId
         );
         if (!approvalOk)
-            return BadRequest($"No pending approval found for role {approvalRole.Value}.");
+            return BadRequest($"No pending approval found for role {cfg.ApprovalRole}.");
 
+        // 2) update RIC status
+        ric.Status = cfg.Next;
+        Touch(ric);
+
+        // If you want: keep it pure via repository (recommended)
+        // var ok = await _repository.UpdateAsync(ric);
+        // if (!ok) return StatusCode(500, "Failed to approve RIC.");
+
+        // current style kamu: attach + partial update
         _context.FormRics.Attach(ric);
         _context.Entry(ric).Property(x => x.Status).IsModified = true;
         _context.Entry(ric).Property(x => x.UpdatedAt).IsModified = true;
-
         await _context.SaveChangesAsync();
-
-        // var ok = await _repository.MoveRicToNextStageAsync(ric, editorId);
-        // if (!ok)
-        //     return StatusCode(500, "Failed to approve RIC.");
 
         return Ok(
             new
@@ -622,10 +403,34 @@ public class RicController : ControllerBase
         );
     }
 
+    [RoleRequired(Role.User_Pic)]
     [HttpDelete("{id:guid}")]
-    [Authorize(Roles = "User_Pic,BR_Pic,SARM_Pic")]
+    // [Authorize(Roles = "User_Pic,BR_Pic,SARM_Pic")]
     public async Task<IActionResult> Delete(Guid id)
     {
-        return await _repository.DeleteAsync(id) ? NoContent() : NotFound("RIC not found.");
+        var ok = await _repository.DeleteAsync(id);
+        return ok ? NoContent() : NotFound("RIC not found.");
+    }
+
+    [RoleRequired(
+        Role.User_Manager,
+        Role.User_VP,
+        Role.BR_Manager,
+        Role.SARM_Manager,
+        Role.SARM_VP,
+        Role.ECS_Manager,
+        Role.ECS_VP
+    )]
+    [HttpGet("approval")]
+    public async Task<IActionResult> GetApprovalQueue()
+    {
+        var groupId = GetGuidClaim("groupId");
+        var roleStr = GetStringClaim("role"); // ✅ pake helper style kamu
+
+        if (!Enum.TryParse(roleStr, out Role role))
+            return Forbid("Invalid role.");
+
+        var data = await _repository.GetApprovalQueueAsync(groupId, roleStr);
+        return Ok(data);
     }
 }

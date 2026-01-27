@@ -10,10 +10,11 @@ namespace OnePro.API.DependencyInjection
         {
             services.AddScoped<IRicRepository, RicRepository>();
             services.AddScoped<IGroupRepository, GroupRepository>();
+            services.AddScoped<IRicRollOutRepository, RicRollOutRepository>();
             // services.AddScoped<IUserRepository, UserRepository>();
-            services.AddScoped<IFormRicApprovalRepository, FormRicApprovalRepository>();
-            services.AddScoped<IReviewFormRicRepository, ReviewFormRicRepository>();
-            services.AddScoped<IFormRicHistoryRepository, FormRicHistoryRepository>();
+            // services.AddScoped<IFormRicApprovalRepository, FormRicApprovalRepository>();
+            // services.AddScoped<IReviewFormRicRepository, ReviewFormRicRepository>();
+            // services.AddScoped<IFormRicHistoryRepository, FormRicHistoryRepository>();
             services.AddScoped<IUndanganFormRicRepository, UndanganFormRicRepository>();
 
             return services;

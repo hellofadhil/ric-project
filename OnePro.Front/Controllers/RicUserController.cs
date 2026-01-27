@@ -95,6 +95,40 @@ namespace OnePro.Front.Controllers.Ric
             return View(ViewUserEdit, vm);
         }
 
+        [HttpPost("Ric/User/Delete/{id:guid}")]
+        [ValidateAntiForgeryToken]
+        [RoleRequired(Role.User_Pic, Role.User_Manager, Role.User_VP)]
+        public async Task<IActionResult> Delete(Guid id)
+        {
+            if (!TryGetToken(out var token))
+                return RedirectToLogin();
+
+            var ric = await RicService.GetRicByIdAsync(id, token);
+            if (ric == null)
+                return NotFound();
+
+            // 🔒 Guard: cuma boleh hapus kalau Draft
+            if ((StatusRic)ric.Status != StatusRic.Draft)
+                return RejectByStatus(
+                    "RIC hanya bisa dihapus jika status masih Draft.",
+                    nameof(UserIndex)
+                );
+
+            DeleteFilesFromWebRoot(ric.AsIsProcessRasciFile);
+            DeleteFilesFromWebRoot(ric.ToBeProcessBusinessRasciKkiFile);
+            DeleteFilesFromWebRoot(ric.ExcpectedCompletionTargetFile);
+
+            var success = await RicService.DeleteRicAsync(id, token);
+            if (!success)
+            {
+                TempData["ErrorMessage"] = "Gagal menghapus RIC.";
+                return RedirectToAction(nameof(UserIndex));
+            }
+
+            TempData["SuccessMessage"] = "RIC & seluruh file berhasil dihapus 🗑️";
+            return RedirectToAction(nameof(UserIndex));
+        }
+
         [HttpPost("Ric/User/Edit/{id:guid}")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(Guid id, RicCreateViewModel model, string action)
@@ -123,7 +157,29 @@ namespace OnePro.Front.Controllers.Ric
                     existing,
                     SaveFilesAsync
                 );
+
+                // ✅ update dulu biar aman
                 await RicService.UpdateRicAsync(id, dto, token);
+
+                // ✅ HAPUS FILE LAMA cuma kalau berubah
+                if (!SameFiles(existing.AsIsProcessRasciFile, dto.AsIsProcessRasciFile))
+                    DeleteFilesFromWebRoot(existing.AsIsProcessRasciFile);
+
+                if (
+                    !SameFiles(
+                        existing.ToBeProcessBusinessRasciKkiFile,
+                        dto.ToBeProcessBusinessRasciKkiFile
+                    )
+                )
+                    DeleteFilesFromWebRoot(existing.ToBeProcessBusinessRasciKkiFile);
+
+                if (
+                    !SameFiles(
+                        existing.ExcpectedCompletionTargetFile,
+                        dto.ExcpectedCompletionTargetFile
+                    )
+                )
+                    DeleteFilesFromWebRoot(existing.ExcpectedCompletionTargetFile);
 
                 TempData["SuccessMessage"] = "RIC berhasil diperbarui!";
                 return RedirectToAction(nameof(UserIndex));
@@ -134,6 +190,27 @@ namespace OnePro.Front.Controllers.Ric
                 ModelState.AddModelError(string.Empty, "Terjadi kesalahan saat update RIC.");
                 return View(ViewUserEdit, model);
             }
+
+            // try
+            // {
+            //     var dto = await RicMapper.MapToUpdateRequestAsync(
+            //         id,
+            //         model,
+            //         action,
+            //         existing,
+            //         SaveFilesAsync
+            //     );
+            //     await RicService.UpdateRicAsync(id, dto, token);
+
+            //     TempData["SuccessMessage"] = "RIC berhasil diperbarui!";
+            //     return RedirectToAction(nameof(UserIndex));
+            // }
+            // catch (Exception ex)
+            // {
+            //     Logger.LogError(ex, "Error updating RIC {Id}", id);
+            //     ModelState.AddModelError(string.Empty, "Terjadi kesalahan saat update RIC.");
+            //     return View(ViewUserEdit, model);
+            // }
         }
 
         [HttpGet("Ric/User/Update/{id:guid}")]
@@ -197,8 +274,8 @@ namespace OnePro.Front.Controllers.Ric
             }
         }
 
-        [RoleRequired(Role.User_Manager, Role.User_VP)]
-        [HttpGet("Ric/User/Approval")]
+        [RoleRequired(Role.User_Manager, Role.User_VP, Role.BR_Manager, Role.SARM_Manager, Role.SARM_VP, Role.ECS_Manager, Role.ECS_VP)]
+        [HttpGet("Ric/Approval")]
         public async Task<IActionResult> ApprovalIndex()
         {
             if (!TryGetToken(out var token))
@@ -222,8 +299,8 @@ namespace OnePro.Front.Controllers.Ric
             return View(ViewUserApprovalIndex, approvalRics);
         }
 
-        [RoleRequired(Role.User_Manager, Role.User_VP)]
-        [HttpGet("Ric/User/Approval/{id:guid}")]
+        [RoleRequired(Role.User_Manager, Role.User_VP, Role.BR_Manager, Role.SARM_Manager, Role.SARM_VP, Role.ECS_Manager, Role.ECS_VP)]
+        [HttpGet("Ric/Approval/{id:guid}")]
         public async Task<IActionResult> Approval(Guid id)
         {
             if (!TryGetToken(out var token))
@@ -232,16 +309,14 @@ namespace OnePro.Front.Controllers.Ric
             var ric = await RicService.GetRicByIdAsync(id, token);
             if (ric == null)
                 return NotFound();
-            
+
             var vm = RicMapper.MapToEditViewModel(ric);
 
             return View(ViewUserApprovalDetail, vm);
         }
 
-        
-
-        [RoleRequired(Role.User_Manager, Role.User_VP)]
-        [HttpPost("Ric/User/Approval/{id:guid}/approve")]
+        [RoleRequired(Role.User_Manager, Role.User_VP, Role.BR_Manager, Role.SARM_Manager, Role.SARM_VP, Role.ECS_Manager, Role.ECS_VP)]
+        [HttpPost("~/Ric/Approval/{id:guid}/approve")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ApproveAction(Guid id)
         {
@@ -258,6 +333,60 @@ namespace OnePro.Front.Controllers.Ric
 
             TempData["SuccessMessage"] = "RIC berhasil di-approve ✅";
             return RedirectToAction(nameof(Approval), new { id });
+        }
+
+        // Helper
+        private void DeleteFilesFromWebRoot(IEnumerable<string>? urls)
+        {
+            if (urls == null)
+                return;
+
+            foreach (var url in urls.Where(u => !string.IsNullOrWhiteSpace(u)))
+            {
+                try
+                {
+                    // contoh url: "/uploads/ric/a.pdf"
+                    var relative = url.Trim()
+                        .TrimStart('~')
+                        .TrimStart('/')
+                        .Replace('/', Path.DirectorySeparatorChar);
+
+                    var fullPath = Path.GetFullPath(Path.Combine(Env.WebRootPath, relative));
+                    var webRootFull = Path.GetFullPath(Env.WebRootPath);
+
+                    // safety: pastiin masih di dalam wwwroot
+                    if (!fullPath.StartsWith(webRootFull, StringComparison.OrdinalIgnoreCase))
+                        continue;
+
+                    if (System.IO.File.Exists(fullPath))
+                        System.IO.File.Delete(fullPath);
+                }
+                catch (Exception ex)
+                {
+                    Logger.LogWarning(ex, "Failed deleting file url={Url}", url);
+                    // jangan throw — biar proses delete RIC tetap lanjut
+                }
+            }
+        }
+
+        private static bool SameFiles(IEnumerable<string>? a, IEnumerable<string>? b)
+        {
+            static string N(string s) => (s ?? "").Trim().ToLowerInvariant();
+
+            var la = (a ?? Enumerable.Empty<string>())
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .Select(N)
+                .OrderBy(x => x)
+                .ToList();
+            var lb = (b ?? Enumerable.Empty<string>())
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .Select(N)
+                .OrderBy(x => x)
+                .ToList();
+
+            if (la.Count != lb.Count)
+                return false;
+            return la.SequenceEqual(lb);
         }
     }
 }

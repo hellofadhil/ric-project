@@ -16,17 +16,30 @@ dotnet watch --urls "https://localhost:7095"
 # Migrations dan Update Database
 
 cd Core
-dotnet ef migrations add AddNameTable --startup-project ../OnePro.API
+dotnet ef migrations add addRicRollOut --startup-project ../OnePro.API
 dotnet ef database update --startup-project ../OnePro.API
 
-# Open Sql Server in CMD
+# Delete Database
+
+sqlcmd -S "(localdb)\MSSQLLocalDB" -Q "SELECT name FROM sys.databases"
 
 sqlcmd -S (localdb)\MSSQLLocalDB -Q "DROP DATABASE DatabaseRic"
 
+
+# Open Sql Server in CMD
+
+
 sqlcmd -S (localdb)\MSSQLLocalDB -d DatabaseRic -Q "SELECT TOP 10 AsIsProcessRasciFile FROM FormRics"
 
-sqlcmd -S (localdb)\MSSQLLocalDB -d DatabaseRic -Q "SELECT * FROM FormRicHistory"
+sqlcmd -S (localdb)\MSSQLLocalDB -d DatabaseRic -Q "SELECT * FROM FormRicHistories"
 
+sqlcmd -S (localdb)\MSSQLLocalDB -d DatabaseRic -Q "SELECT FormRicRollOutId FROM FormRicRollOutHistories"
+
+
+
+sqlcmd -S (localdb)\MSSQLLocalDB -d DatabaseRic -Q "SELECT TOP 2 Hashtag FROM FormRicRollOuts"
+ 
+sqlcmd -S (localdb)\MSSQLLocalDB -d DatabaseRic -Q "DELETE FROM FormRicRollOuts"
 
 
 SELECT COLUMN_NAME

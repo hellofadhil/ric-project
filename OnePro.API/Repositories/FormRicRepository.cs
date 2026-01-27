@@ -1,13 +1,3 @@
-// using System;
-// using System.Collections.Generic;
-// using System.Linq;
-// using System.Threading.Tasks;
-// using Core.Models;
-// using Core.Models.Entities;
-// using Core.Models.Enums;
-// using Microsoft.EntityFrameworkCore;
-// using OnePro.API.Interfaces;
-
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -17,6 +7,7 @@ using System.Threading.Tasks;
 using Core.Models;
 using Core.Models.Entities;
 using Core.Models.Enums;
+using Core.RequestModels.Ric;
 using Microsoft.EntityFrameworkCore;
 using OnePro.API.Interfaces;
 
@@ -26,6 +17,21 @@ namespace OnePro.API.Repositories
     {
         private readonly OneProDbContext _context;
 
+        // Group special reviewers
+        private static readonly Guid GroupBrId = Guid.Parse("20000000-0000-0000-0000-000000000002");
+        private static readonly Guid GroupSarmId = Guid.Parse(
+            "30000000-0000-0000-0000-000000000003"
+        );
+        private static readonly Guid GroupEcsId = Guid.Parse(
+            "40000000-0000-0000-0000-000000000004"
+        );
+
+        private static readonly JsonSerializerOptions EditedFieldsJsonOptions = new()
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+            DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
+        };
+
         public RicRepository(OneProDbContext context)
         {
             _context = context;
@@ -33,10 +39,6 @@ namespace OnePro.API.Repositories
 
         public async Task<List<RicListItemResponse>> GetAllByGroupAsync(Guid groupId)
         {
-            var groupBR = Guid.Parse("20000000-0000-0000-0000-000000000002");
-            var groupSARM = Guid.Parse("30000000-0000-0000-0000-000000000003");
-            var groupECS = Guid.Parse("40000000-0000-0000-0000-000000000004");
-
             var query =
                 from r in _context.FormRics.AsNoTracking()
                 join u in _context.Users.AsNoTracking() on r.IdUser equals u.Id into userJoined
@@ -44,7 +46,7 @@ namespace OnePro.API.Repositories
                 select new { Ric = r, User = user };
 
             // CASE 1: Group spesial (BR / SARM / ECS) => mode reviewer
-            if (groupId == groupBR)
+            if (groupId == GroupBrId)
             {
                 query = query.Where(x =>
                     x.Ric.Status == StatusRic.Submitted_To_BR
@@ -53,11 +55,11 @@ namespace OnePro.API.Repositories
                     || x.Ric.Status == StatusRic.Return_ECS_To_BR
                 );
             }
-            else if (groupId == groupSARM)
+            else if (groupId == GroupSarmId)
             {
                 query = query.Where(x => x.Ric.Status == StatusRic.Review_SARM);
             }
-            else if (groupId == groupECS)
+            else if (groupId == GroupEcsId)
             {
                 query = query.Where(x => x.Ric.Status == StatusRic.Review_ECS);
             }
@@ -84,16 +86,6 @@ namespace OnePro.API.Repositories
         {
             return await _context.FormRics!.AsNoTracking().FirstOrDefaultAsync(r => r.Id == id);
         }
-
-        // public async Task<FormRic?> GetDetailByIdAsync(Guid id)
-        // {
-        //     // return await _context.FormRics!.AsNoTracking().FirstOrDefaultAsync(r => r.Id == id);
-        //     return await _context
-        //         .FormRics!.AsNoTracking()
-        //         .Include(r => r.Histories)
-        //         .Include(r => r.Reviews)
-        //         .FirstOrDefaultAsync(r => r.Id == id);
-        // }
 
         public async Task<FormRicDetailResponse?> GetDetailByIdAsync(Guid id)
         {
@@ -174,48 +166,15 @@ namespace OnePro.API.Repositories
             return await _context.SaveChangesAsync() > 0;
         }
 
-        // public async Task<bool> ResubmitAfterRejection(FormRic model, Guid editorId)
-        // {
-        //     // 1. ambil data lama dari DB (tracked)
-        //     var existing = await _context
-        //         .FormRics!.AsNoTracking()
-        //         .FirstOrDefaultAsync(x => x.Id == model.Id);
+        public async Task<bool> DeleteAsync(Guid id)
+        {
+            var entity = await _context.FormRics!.FindAsync(id);
+            if (entity is null)
+                return false;
 
-        //     if (existing is null)
-        //         return false;
-
-        //     // 2. cari versi terakhir
-        //     var lastVersion = await _context
-        //         .FormRicHistories!.Where(h => h.IdFormRic == model.Id)
-        //         .OrderByDescending(h => h.Version)
-        //         .Select(h => h.Version)
-        //         .FirstOrDefaultAsync();
-
-        //     var newVersion = lastVersion + 1;
-
-        //     // 3. serialize snapshot versi lama
-        //     var snapshotJson = JsonSerializer.Serialize(existing);
-
-        //     // optional: hitung field yang berubah
-        //     var editedFields = GetEditedFields(existing, model); // return string? JSON/dll
-
-        //     var history = new FormRicHistory
-        //     {
-        //         IdFormRic = existing.Id,
-        //         IdEditor = editorId,
-        //         Version = newVersion,
-        //         Snapshot = snapshotJson,
-        //         EditedFields = editedFields,
-        //         CreatedAt = DateTime.UtcNow,
-        //     };
-
-        //     await _context.FormRicHistories!.AddAsync(history);
-
-        //     // 4. update entity utama ke versi baru
-        //     _context.FormRics!.Update(model);
-
-        //     return await _context.SaveChangesAsync() > 0;
-        // }
+            _context.FormRics.Remove(entity);
+            return await _context.SaveChangesAsync() > 0;
+        }
 
         public async Task AddHistoryAsync(FormRicHistory history)
         {
@@ -229,28 +188,17 @@ namespace OnePro.API.Repositories
             await _context.SaveChangesAsync();
         }
 
-        public async Task<bool> DeleteAsync(Guid id)
-        {
-            var entity = await _context.FormRics!.FindAsync(id);
-            if (entity is null)
-                return false;
-
-            _context.FormRics.Remove(entity);
-            return await _context.SaveChangesAsync() > 0;
-        }
-
         public async Task<bool> MoveRicToNextStageAsync(FormRic ric, Guid actorId)
         {
             var oldData = await _context
                 .FormRics!.AsNoTracking()
                 .FirstOrDefaultAsync(x => x.Id == ric.Id);
-
             if (oldData is null)
                 return false;
 
-            var EditedFieldsJson = GetEditedFields(oldData, ric);
+            var editedFieldsJson = GetEditedFields(oldData, ric);
 
-            if (EditedFieldsJson != null)
+            if (editedFieldsJson != null)
             {
                 var lastVersion =
                     await _context
@@ -264,7 +212,7 @@ namespace OnePro.API.Repositories
                     IdEditor = actorId,
                     Version = lastVersion + 1,
                     SnapshotJson = JsonSerializer.Serialize(oldData),
-                    EditedFieldsJson = EditedFieldsJson,
+                    EditedFieldsJson = editedFieldsJson,
                     CreatedAt = DateTime.UtcNow,
                 };
 
@@ -272,7 +220,6 @@ namespace OnePro.API.Repositories
             }
 
             _context.FormRics.Update(ric);
-
             return await _context.SaveChangesAsync() > 0;
         }
 
@@ -281,7 +228,6 @@ namespace OnePro.API.Repositories
             var oldData = await _context
                 .FormRics!.AsNoTracking()
                 .FirstOrDefaultAsync(x => x.Id == newData.Id);
-
             if (oldData is null)
                 return false;
 
@@ -307,28 +253,96 @@ namespace OnePro.API.Repositories
             return await _context.SaveChangesAsync() > 0;
         }
 
-        // ========== HELPER DI BAWAH SINI ==========
+        public async Task<List<RicListItemResponse>> GetApprovalQueueAsync(
+            Guid groupId,
+            string role
+        )
+        {
+            var query =
+                from r in _context.FormRics.AsNoTracking()
+                join u in _context.Users.AsNoTracking() on r.IdUser equals u.Id into userJoined
+                from user in userJoined.DefaultIfEmpty()
+                select new { Ric = r, User = user };
+
+            // 1) tentuin status yg boleh diliat berdasarkan role approver
+            StatusRic? targetStatus = role switch
+            {
+                "User_Manager" => StatusRic.Approval_Manager_User,
+                "User_VP" => StatusRic.Approval_VP_User,
+
+                "BR_Manager" => StatusRic.Approval_Manager_BR,
+
+                "SARM_Manager" => StatusRic.Approval_Manager_SARM,
+                "SARM_VP" => StatusRic.Approval_VP_SARM,
+
+                "ECS_Manager" => StatusRic.Approval_Manager_ECS,
+                "ECS_VP" => StatusRic.Approval_VP_ECS,
+
+                _ => null,
+            };
+
+            if (targetStatus is null)
+                return new List<RicListItemResponse>();
+
+            query = query.Where(x => x.Ric.Status == targetStatus.Value);
+
+            // 2) scope datanya:
+            // - kalau role User_* => cuma RIC dalam group user dia (divisinya)
+            // - kalau BR/SARM/ECS => biasanya mereka approve “antrian global” sesuai status,
+            //   tapi kalau kamu mau batasi, bisa pakai group khusus mereka.
+            var isUserApproval = role is "User_Manager" or "User_VP";
+            if (isUserApproval)
+            {
+                query = query.Where(x => x.Ric.IdGroupUser == groupId);
+            }
+            else
+            {
+                // kalau kamu punya konstanta GroupBrId/GroupSarmId/GroupEcsId, bisa aktifin pembatasan ini:
+                // if (role.StartsWith("BR_"))   query = query.Where(x => groupId == GroupBrId);
+                // if (role.StartsWith("SARM_")) query = query.Where(x => groupId == GroupSarmId);
+                // if (role.StartsWith("ECS_"))  query = query.Where(x => groupId == GroupEcsId);
+
+                // default: biarin sesuai status aja
+            }
+
+            return await query
+                .OrderByDescending(x => x.Ric.UpdatedAt)
+                .Select(x => new RicListItemResponse
+                {
+                    Id = x.Ric.Id,
+                    Judul = x.Ric.Judul,
+                    Permasalahan = x.Ric.Permasalahan,
+                    UserName = x.User != null ? x.User.Name : null,
+                    Status = x.Ric.Status.ToString(),
+                    UpdatedAt = x.Ric.UpdatedAt,
+                })
+                .ToListAsync();
+        }
+
+        #region Private Helper
+        private static bool ListEquals(List<string>? a, List<string>? b)
+        {
+            if (ReferenceEquals(a, b))
+                return true;
+
+            if (a is null || b is null)
+                return false;
+
+            if (a.Count != b.Count)
+                return false;
+
+            for (var i = 0; i < a.Count; i++)
+            {
+                if (!string.Equals(a[i], b[i], StringComparison.Ordinal))
+                    return false;
+            }
+
+            return true;
+        }
 
         private static string? GetEditedFields(FormRic oldVal, FormRic newVal)
         {
             var changes = new Dictionary<string, object?>();
-
-            static bool ListEquals(List<string>? a, List<string>? b)
-            {
-                if (a == b)
-                    return true;
-                if (a is null || b is null)
-                    return false;
-                if (a.Count != b.Count)
-                    return false;
-
-                for (int i = 0; i < a.Count; i++)
-                {
-                    if (!string.Equals(a[i], b[i], StringComparison.Ordinal))
-                        return false;
-                }
-                return true;
-            }
 
             if (!string.Equals(oldVal.Judul, newVal.Judul, StringComparison.Ordinal))
                 changes["judul"] = newVal.Judul;
@@ -401,20 +415,13 @@ namespace OnePro.API.Repositories
             if (changes.Count == 0)
                 return null;
 
-            var options = new JsonSerializerOptions
-            {
-                PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-                DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
-            };
-
-            return JsonSerializer.Serialize(changes, options);
+            return JsonSerializer.Serialize(changes, EditedFieldsJsonOptions);
         }
 
         public async Task<bool> EnsureApprovalsCreatedAsync(Guid ricId)
         {
             // idempotent: kalau sudah ada record approval untuk ric ini, skip
             var exists = await _context.FormRicApprovals!.AnyAsync(a => a.IdFormRic == ricId);
-
             if (exists)
                 return true;
 
@@ -457,5 +464,7 @@ namespace OnePro.API.Repositories
 
             return await _context.SaveChangesAsync() > 0;
         }
+
+        #endregion Private helper
     }
 }

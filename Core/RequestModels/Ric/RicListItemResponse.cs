@@ -8,5 +8,7 @@ namespace Core.RequestModels.Ric
         public string? UserName { get; set; }
         public string Status { get; set; } = default!;
         public DateTime UpdatedAt { get; set; }
+
+        public List<string>? Hastag { get; set; }
     }
 }

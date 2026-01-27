@@ -272,5 +272,28 @@ namespace OnePro.Front.Services.Implement
 
         //     return false;
         // }
+
+        public async Task<bool> DeleteRicAsync(Guid id, string token)
+        {
+            var apiUrl = $"{_config["ApiUrl"]}/api/v1/Ric/{id}";
+            var client = new RestClient(apiUrl);
+
+            // ⚠️ Ini beneran HTTP DELETE (bukan POST)
+            var request = new RestRequest("", Method.Delete);
+            request.AddHeader("Authorization", $"Bearer {token}");
+
+            var response = await client.ExecuteAsync(request);
+
+            _logger.LogInformation(
+                "DELETE API RESP | RicId={RicId} | Code={Code} | Success={Success} | Body={Body}",
+                id,
+                (int)response.StatusCode,
+                response.IsSuccessful,
+                response.Content
+            );
+
+            // backend biasanya balikin 204 NoContent / 200 OK
+            return response.IsSuccessful;
+        }
     }
 }
